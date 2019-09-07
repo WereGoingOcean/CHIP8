@@ -1,12 +1,14 @@
-﻿namespace CHIP8Core.Registers
+﻿using CHIP8Core.Models;
+
+namespace CHIP8Core.Registers
 {
     public class ProgramCounter : SixteenBitRegister
     {
         #region Instance Methods
 
-        public ushort Increment()
+        public TwoBytes Increment()
         {
-            var nextInstruction = (ushort)(this.registerValue + 0xf);
+            var nextInstruction = this.registerValue + 0xf;
 
             this.SetRegister(nextInstruction);
 

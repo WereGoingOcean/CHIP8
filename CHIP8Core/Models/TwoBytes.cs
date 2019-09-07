@@ -46,6 +46,25 @@ namespace CHIP8Core.Models
                                         0);
         }
 
+        public static implicit operator TwoBytes(int value)
+        {
+            var byteArray = BitConverter.GetBytes(value);
+
+            //TODO not 100% sure these are correct
+            if (littleEndian)
+            {
+                return new TwoBytes(byteArray[1],
+                                    byteArray[0]);
+            }
+            else
+            {
+                return new TwoBytes(byteArray[2],
+                                    byteArray[3]);
+            }
+        }
+
+        private static readonly bool littleEndian = BitConverter.IsLittleEndian;
+
         #endregion
     }
 }

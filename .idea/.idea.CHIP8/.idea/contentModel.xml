@@ -10,6 +10,7 @@
         <e p="CHIP8Core.csproj" t="IncludeRecursive" />
         <e p="Memory" t="Include">
           <e p="RandomAccessMemory.cs" t="Include" />
+          <e p="Stack.cs" t="Include" />
         </e>
         <e p="Models" t="Include">
           <e p="TwoBytes.cs" t="Include" />

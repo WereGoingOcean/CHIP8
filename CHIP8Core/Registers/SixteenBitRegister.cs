@@ -1,16 +1,18 @@
-﻿namespace CHIP8Core.Registers
+﻿using CHIP8Core.Models;
+
+namespace CHIP8Core.Registers
 {
     public class SixteenBitRegister
     {
         #region Fields
 
-        protected ushort registerValue;
+        protected TwoBytes registerValue;
 
         #endregion
 
         #region Instance Methods
 
-        public void SetRegister(ushort newValue)
+        protected void SetRegister(TwoBytes newValue)
         {
             registerValue = newValue;
         }
