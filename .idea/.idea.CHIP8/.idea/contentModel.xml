@@ -8,12 +8,28 @@
         <e p="bin" t="ExcludeRecursive" />
         <e p="CHIP8.cs" t="Include" />
         <e p="CHIP8Core.csproj" t="IncludeRecursive" />
+        <e p="Memory" t="Include">
+          <e p="RandomAccessMemory.cs" t="Include" />
+        </e>
+        <e p="Models" t="Include">
+          <e p="TwoBytes.cs" t="Include" />
+        </e>
         <e p="obj" t="ExcludeRecursive">
           <e p="Debug" t="Include">
             <e p="netstandard2.0" t="Include">
               <e p="CHIP8Core.AssemblyInfo.cs" t="Include" />
             </e>
           </e>
+        </e>
+        <e p="Registers" t="Include">
+          <e p="EightBitRegister.cs" t="Include" />
+          <e p="GeneralPurposeRegister.cs" t="Include" />
+          <e p="ProgramCounter.cs" t="Include" />
+          <e p="RegisterBase.cs" t="Include" />
+          <e p="RegisterModule.cs" t="Include" />
+          <e p="SixteenBitRegister.cs" t="Include" />
+          <e p="SoundTimerRegister.cs" t="Include" />
+          <e p="TimerRegister.cs" t="Include" />
         </e>
       </e>
       <e p="CHIP8Emulator" t="IncludeRecursive">
