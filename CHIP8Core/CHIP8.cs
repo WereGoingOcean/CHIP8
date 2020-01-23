@@ -21,7 +21,7 @@ namespace CHIP8Core
         /// <summary>
         /// I register. Usually stores memory addresses, meaning typically only leftmost 12 bits are used.
         /// </summary>
-        private readonly ushort iRegister;
+        private ushort iRegister;
 
         private readonly byte[] ram = new byte[4096];
 
@@ -35,6 +35,8 @@ namespace CHIP8Core
         /// </summary>
         private readonly byte stackPointer;
 
+        private readonly Random random = new Random();
+
         #endregion
 
         #region Instance Methods
@@ -42,7 +44,9 @@ namespace CHIP8Core
         /// <summary>
         /// Increments the program counter by two and reads the next word from RAM.
         /// </summary>
-        /// <returns>The ushort next instruction to run.</returns>
+        /// <returns>
+        /// The ushort next instruction to run.
+        /// </returns>
         public ushort GetNextInstruction()
         {
             var msb = ram[programCounter++];
@@ -74,7 +78,102 @@ namespace CHIP8Core
             {
                 var nextInstruction = new Instruction(GetNextInstruction());
 
+                var firstHex = nextInstruction.FirstHex;
+
                 //TODO parse the op code and provide to the proper method
+                switch (firstHex)
+                {
+                    case 0x0:
+                        switch (nextInstruction.instruction)
+                        {
+                            case 0x00E0:
+                                //TODO clear display
+                                break;
+                            case 0x00EE:
+                                //TODO return from sub routine
+                                break;
+                        }
+
+                        break;
+                    case 0x1:
+                        //TODO jump to addr
+                        break;
+                    case 0x2:
+                        //TODO call addr
+                        break;
+                    case 0x3:
+                        // Skip next instruction if vx = kk
+                        if (generalRegisters[nextInstruction.x] == nextInstruction.kk)
+                        {
+                            programCounter += 0x2;
+                        }
+                        break;
+                    case 0x4:
+                        // Skip next instruction if vx != kk
+                        if (generalRegisters[nextInstruction.x] != nextInstruction.kk)
+                        {
+                            programCounter += 0x2;
+                        }
+                        break;
+                    case 0x5:
+                        //Skip next instruction if vx = vy
+                        if (generalRegisters[nextInstruction.x] == generalRegisters[nextInstruction.y])
+                        {
+                            programCounter += 0x2;
+                        }
+                        break;
+                    case 0x6:
+                        // Load kk into register vx
+                        generalRegisters[nextInstruction.x] = nextInstruction.kk;
+                        break;
+                    case 0x7:
+                        // Add kk to vx then store in vx
+                        generalRegisters[nextInstruction.x] += nextInstruction.kk;
+                        break;
+                    case 0x8:
+                        //TODO multiple ops based on final digit (n)
+                        break;
+                    case 0x9:
+                        // Skip next instruction if vx != vy
+                        if (generalRegisters[nextInstruction.x] != generalRegisters[nextInstruction.y])
+                        {
+                            programCounter += 0x2;
+                        }
+                        break;
+                    case 0xA:
+                        // Set I to nnn (addr)
+                        iRegister = nextInstruction.addr;
+                        break;
+                    case 0xB:
+                        //Set PC to nnn + v0
+                        programCounter = (ushort)(generalRegisters[0] + nextInstruction.addr);
+                        break;
+                    case 0xC:
+                        // RND, gen random between 0 - 255. Rand & kk -> vx
+                        var randomVal = new byte[1];
+                        random.NextBytes(randomVal);
+
+                        generalRegisters[nextInstruction.x] = (byte)(randomVal[0] & nextInstruction.kk);
+                        break;
+                    case 0xD:
+                        //TODO draw
+                        /*
+                         * Dxyn - DRW Vx, Vy, nibble
+    Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+
+    The interpreter reads n bytes from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen at coordinates (Vx, Vy). Sprites are XORed onto the existing screen. If this causes any pixels to be erased, VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen. See instruction 8xy3 for more information on XOR, and section 2.4, Display, for more information on the Chip-8 screen and sprites.
+                         */
+                        break;
+                    case 0xE:
+                        //TODO two keyboard commands based on last byte of instruction (kk)
+                        break;
+                    case 0xF:
+                        //TODO multiple instructions
+                        break;
+                    default:
+                        Debug.Write($"Unknown code {nextInstruction}.");
+                        break;
+                }
             }
 
             Debug.Write("Execution complete.");

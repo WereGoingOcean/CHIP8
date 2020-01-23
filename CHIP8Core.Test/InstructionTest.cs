@@ -7,10 +7,26 @@ namespace CHIP8Core.Test
         #region Instance Methods
 
         [Theory]
+        [InlineData(0x0E00,
+                    0x0)]
+        [InlineData(0x1FC5,
+                    0x1)]
+        [InlineData(0x6D83,
+                    0x6)]
+        public void CorrectlyParsesFirstHex(ushort instructionWord,
+                                            byte firstHex)
+        {
+            var parsedInstruction = new Instruction(instructionWord);
+
+            Assert.Equal(firstHex,
+                         parsedInstruction.FirstHex);
+        }
+
+        [Theory]
         [InlineData(0xD123,
-            0x23)]
+                    0x23)]
         [InlineData(0xC778,
-            0x78)]
+                    0x78)]
         public void CorrectlyParsesKk(ushort instructionWord,
                                       byte kk)
         {
@@ -22,9 +38,9 @@ namespace CHIP8Core.Test
 
         [Theory]
         [InlineData(0xD123,
-            0x3)]
+                    0x3)]
         [InlineData(0xC778,
-            0x8)]
+                    0x8)]
         public void CorrectlyParsesNibble(ushort instructionWord,
                                           byte nibble)
         {
@@ -36,9 +52,9 @@ namespace CHIP8Core.Test
 
         [Theory]
         [InlineData(0x2ABC,
-            0xABC)]
+                    0xABC)]
         [InlineData(0xA476,
-            0x476)]
+                    0x476)]
         public void CorrectlyParsesNNN(ushort instructionWord,
                                        ushort nnn)
         {
@@ -50,9 +66,9 @@ namespace CHIP8Core.Test
 
         [Theory]
         [InlineData(0xD123,
-            0x1)]
+                    0x1)]
         [InlineData(0xC798,
-            0x7)]
+                    0x7)]
         public void CorrectlyParsesX(ushort instructionWord,
                                      byte x)
         {
@@ -64,9 +80,9 @@ namespace CHIP8Core.Test
 
         [Theory]
         [InlineData(0xD123,
-            0x2)]
+                    0x2)]
         [InlineData(0xC798,
-            0x9)]
+                    0x9)]
         public void CorrectlyParsesY(ushort instructionWord,
                                      byte y)
         {

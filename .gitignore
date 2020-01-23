@@ -351,3 +351,17 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Visual Studio cache files
+# files ending in .cache can be ignored
+*.[Cc]ache
+# but keep track of directories ending in .cache
+!*.[Cc]ache/
+
+# Extra
+project.assets.json
+**/*.nuget.cache
+**/*.nuget.cache.g.props
+**/*.nuget.dgspec.json
+**/*.assets.cache
+**/*AssemblyReference.cache

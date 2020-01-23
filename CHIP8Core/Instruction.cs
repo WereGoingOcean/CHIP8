@@ -4,6 +4,8 @@
     {
         #region Constants
 
+        private const ushort firstByteMask = 0xF000;
+
         private const ushort kkMask = 0x00FF;
 
         private const ushort nMask = 0x000F;
@@ -13,12 +15,6 @@
         private const ushort xMask = 0x0F00;
 
         private const ushort yMask = 0x00F0;
-
-        #endregion
-
-        #region Fields
-
-        private readonly ushort instruction;
 
         #endregion
 
@@ -40,6 +36,21 @@
                 return (ushort)(instruction & nnnMask);
             }
         }
+
+        /// <summary>
+        /// Get a byte representing the first hex of the instruction.
+        /// </summary>
+        public byte FirstHex
+        {
+            get
+            {
+                var maskedWord = (ushort)(instruction & firstByteMask);
+
+                return (byte)(maskedWord >> 12);
+            }
+        }
+
+        public ushort instruction { get; }
 
         public byte kk
         {
@@ -77,6 +88,15 @@
 
                 return (byte)(yWord >> 4);
             }
+        }
+
+        #endregion
+
+        #region Instance Methods
+
+        public override string ToString()
+        {
+            return instruction.ToString("X4");
         }
 
         #endregion
