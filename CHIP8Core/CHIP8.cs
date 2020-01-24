@@ -138,7 +138,7 @@ namespace CHIP8Core
                         generalRegisters[nextInstruction.x] += nextInstruction.kk;
                         break;
                     case 0x8:
-                        //TODO multiple ops based on final digit (n)
+                        // Arithmetic op codes
                         switch (nextInstruction.nibble)
                         {
                             case 0x0:
