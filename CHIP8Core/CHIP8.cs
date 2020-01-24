@@ -139,6 +139,85 @@ namespace CHIP8Core
                         break;
                     case 0x8:
                         //TODO multiple ops based on final digit (n)
+                        switch (nextInstruction.nibble)
+                        {
+                            case 0x0:
+                                // Store vy in vx
+                                generalRegisters[nextInstruction.x] = generalRegisters[nextInstruction.y];
+                                break;
+                            case 0x1:
+                                // Bitwise or on vx and vy, stored in vx
+                                generalRegisters[nextInstruction.x] = (byte)(generalRegisters[nextInstruction.x] | generalRegisters[nextInstruction.y]);
+                                break;
+                            case 0x2:
+                                // Bitwise and on vx and vy, stored in vx
+                                generalRegisters[nextInstruction.x] = (byte)(generalRegisters[nextInstruction.x] & generalRegisters[nextInstruction.y]);
+                                break;
+                            case 0x3:
+                                // Bitwise xor on vx and vy, stored in vx
+                                generalRegisters[nextInstruction.x] = (byte)(generalRegisters[nextInstruction.x] ^ generalRegisters[nextInstruction.y]);
+                                break;
+                            case 0x4:
+                                var x = nextInstruction.x;
+
+                                // Add vx and vy. Set vf = 1 if carry (> 8 bit result) otherwise set to 0. Keep lower 8 bits in vx.
+                                var result = (ushort)(generalRegisters[x] + generalRegisters[nextInstruction.y]);
+
+                                if ((byte)(result >> 8) > 0x0) //Shift upper bytes then cast to remove all but lower 8 bits
+                                {
+                                    generalRegisters[0xF] = 0x1;
+                                }
+                                else
+                                {
+                                    generalRegisters[0xF] = 0x0;
+                                }
+
+                                generalRegisters[x] = (byte)result; // Casting to byte should only take lower bits
+                                break;
+                            case 0x5:
+                                x = nextInstruction.x;
+
+                                var vy = generalRegisters[nextInstruction.y];
+                                var vx = generalRegisters[x];
+
+                                // Sub vy from vx. Store result in vx. If vx > vy set vf = 1, otherwise set vf = 0
+                                generalRegisters[0xF] = vx > vy
+                                                            ? (byte)0x1
+                                                            : (byte)0x0;
+
+                                generalRegisters[x] = (byte)(vx - vy);
+                                break;
+                            case 0x6:
+                                x = nextInstruction.x;
+                                vx = generalRegisters[x];
+
+                                // If the least - significant bit of Vx is 1, then VF is set to 1, otherwise 0.Then Vx is divided by 2.
+                                generalRegisters[0xF] = (byte)(vx & 0x1);
+
+                                generalRegisters[x] = (byte)(vx / 2);
+                                break;
+                            case 0x7:
+                                x = nextInstruction.x;
+                                vx = generalRegisters[x];
+                                vy = generalRegisters[nextInstruction.y];
+
+                                // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and the results stored in Vx.
+                                generalRegisters[0xF] = vy > vx
+                                                            ? (byte)0x1
+                                                            : (byte)0x0;
+
+                                generalRegisters[x] = (byte)(vy - vx);
+                                break;
+                            case 0xE:
+                                x = nextInstruction.x;
+                                vx = generalRegisters[x];
+
+                                // If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is multiplied by 2.
+                                generalRegisters[0xF] = (byte)((vx & 0x80) >> 7); // Mask all but highest bit, then shift left to get 0 or 1
+
+                                generalRegisters[x] = (byte)(vx / 2);
+                                break;
+                        }
                         break;
                     case 0x9:
                         // Skip next instruction if vx != vy
