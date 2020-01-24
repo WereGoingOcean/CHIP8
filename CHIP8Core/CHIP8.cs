@@ -265,7 +265,18 @@ namespace CHIP8Core
                          */
                         break;
                     case 0xE:
-                        //TODO two keyboard commands based on last byte of instruction (kk)
+                        // Two keyboard commands based on last byte of instruction (kk)
+                        switch (nextInstruction.kk)
+                        {
+                            case 0x9E:
+                                /* Skip next instruction if key with the value of Vx is pressed.
+                                Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2. */
+                                break;
+                            case 0xA1:
+                                /* Skip next instruction if key with the value of Vx is not pressed.
+                                Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2. */
+                                break;
+                        }
                         break;
                     case 0xF:
                         switch (nextInstruction.kk)
