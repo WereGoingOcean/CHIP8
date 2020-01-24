@@ -27,13 +27,14 @@ namespace CHIP8Core
 
         /// <summary>
         /// Stack is an array of 16 16 bit values. Stores the address to return to when a sub routine finishes. CHIP 8 Supports 16 levels.
+        /// We have a length 17 here because it starts at 0. But we increment before setting the stack ever. I.E. the first Call we save the PC in stack[1].
         /// </summary>
-        private readonly ushort[] stack = new ushort[16];
+        private readonly ushort[] stack = new ushort[17];
 
         /// <summary>
         /// Byte to point at the top most level of the stack.
         /// </summary>
-        private readonly byte stackPointer;
+        private byte stackPointer;
 
         private readonly Random random = new Random();
 
@@ -90,16 +91,22 @@ namespace CHIP8Core
                                 //TODO clear display
                                 break;
                             case 0x00EE:
-                                //TODO return from sub routine
+                                // Return from sub routine
+                                programCounter = stack[stackPointer];
+                                stackPointer -= 1;
                                 break;
                         }
 
                         break;
                     case 0x1:
-                        //TODO jump to addr
+                        // Jump to addr
+                        programCounter = iRegister;
                         break;
                     case 0x2:
-                        //TODO call addr
+                        // Call addr
+                        stackPointer += 0x1;
+                        stack[stackPointer] = programCounter;
+                        programCounter = nextInstruction.addr;
                         break;
                     case 0x3:
                         // Skip next instruction if vx = kk
