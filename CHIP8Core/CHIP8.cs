@@ -18,25 +18,34 @@ namespace CHIP8Core
         /// </summary>
         private readonly byte[] generalRegisters = new byte[16];
 
+        private readonly byte[] ram = new byte[4096];
+
+        private readonly Random random = new Random();
+
+        /// <summary>
+        /// Stack is an array of 16 16 bit values. Stores the address to return to when a sub routine finishes. CHIP 8 Supports 16 levels.
+        /// We have a length 17 here because it starts at 0. But we increment before setting the stack ever. I.E. the first Call we save
+        /// the PC in stack[1].
+        /// </summary>
+        private readonly ushort[] stack = new ushort[17];
+
+        /// <summary>Decrements at 60hz</summary>
+        private byte delayTimer;
+
         /// <summary>
         /// I register. Usually stores memory addresses, meaning typically only leftmost 12 bits are used.
         /// </summary>
         private ushort iRegister;
 
-        private readonly byte[] ram = new byte[4096];
-
         /// <summary>
-        /// Stack is an array of 16 16 bit values. Stores the address to return to when a sub routine finishes. CHIP 8 Supports 16 levels.
-        /// We have a length 17 here because it starts at 0. But we increment before setting the stack ever. I.E. the first Call we save the PC in stack[1].
+        /// Decrements at 60hz. Buzzer sounds when > 0.
         /// </summary>
-        private readonly ushort[] stack = new ushort[17];
+        private byte soundTimer;
 
         /// <summary>
         /// Byte to point at the top most level of the stack.
         /// </summary>
         private byte stackPointer;
-
-        private readonly Random random = new Random();
 
         #endregion
 
@@ -114,6 +123,7 @@ namespace CHIP8Core
                         {
                             programCounter += 0x2;
                         }
+
                         break;
                     case 0x4:
                         // Skip next instruction if vx != kk
@@ -121,6 +131,7 @@ namespace CHIP8Core
                         {
                             programCounter += 0x2;
                         }
+
                         break;
                     case 0x5:
                         //Skip next instruction if vx = vy
@@ -128,6 +139,7 @@ namespace CHIP8Core
                         {
                             programCounter += 0x2;
                         }
+
                         break;
                     case 0x6:
                         // Load kk into register vx
@@ -218,6 +230,7 @@ namespace CHIP8Core
                                 generalRegisters[x] = (byte)(vx / 2);
                                 break;
                         }
+
                         break;
                     case 0x9:
                         // Skip next instruction if vx != vy
@@ -225,6 +238,7 @@ namespace CHIP8Core
                         {
                             programCounter += 0x2;
                         }
+
                         break;
                     case 0xA:
                         // Set I to nnn (addr)
@@ -245,16 +259,56 @@ namespace CHIP8Core
                         //TODO draw
                         /*
                          * Dxyn - DRW Vx, Vy, nibble
-    Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+                                Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 
-    The interpreter reads n bytes from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen at coordinates (Vx, Vy). Sprites are XORed onto the existing screen. If this causes any pixels to be erased, VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen. See instruction 8xy3 for more information on XOR, and section 2.4, Display, for more information on the Chip-8 screen and sprites.
+                                The interpreter reads n bytes from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen at coordinates (Vx, Vy). Sprites are XORed onto the existing screen. If this causes any pixels to be erased, VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen. See instruction 8xy3 for more information on XOR, and section 2.4, Display, for more information on the Chip-8 screen and sprites.
                          */
                         break;
                     case 0xE:
                         //TODO two keyboard commands based on last byte of instruction (kk)
                         break;
                     case 0xF:
-                        //TODO multiple instructions
+                        switch (nextInstruction.kk)
+                        {
+                            case 0x07:
+                                // Set vx = delay timer
+                                generalRegisters[nextInstruction.x] = delayTimer;
+                                break;
+                            case 0x0A:
+                                // TODO Wait for key press, store key value in vx
+                                // All execution stops TODO even timer?
+                                break;
+                            case 0x15:
+                                // Set DT = vx
+                                delayTimer = generalRegisters[nextInstruction.x];
+                                break;
+                            case 0x18:
+                                // Set ST = vx
+                                soundTimer = generalRegisters[nextInstruction.x];
+                                break;
+                            case 0x1E:
+                                // Set I = I + vx
+                                iRegister = (ushort)(generalRegisters[nextInstruction.x] + iRegister);
+                                break;
+                            case 0x29:
+                                // TODO Set I = location of sprite for digit Vx.
+                                break;
+                            case 0x33:
+                                /* TODO Store BCD representation of Vx in memory locations I, I+1, and I+2.
+                                    The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2. */
+                                break;
+                            case 0x55:
+                                // TODO
+                                /* Store registers V0 through Vx in memory starting at location I.
+                                The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I. */
+                                break;
+                            case 0x65:
+                                // TODO 
+                                /* Read registers V0 through Vx from memory starting at location I.
+                                The interpreter reads values from memory starting at location I into registers V0 through Vx. */
+                                break;
+                        }
+
                         break;
                     default:
                         Debug.Write($"Unknown code {nextInstruction}.");
