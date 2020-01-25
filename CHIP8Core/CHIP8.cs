@@ -126,7 +126,7 @@ namespace CHIP8Core
 
             Task.Run(() => Clock(clockToken.Token));
 
-            while (programCounter < 4096)
+            while (programCounter < 4096 && !clockToken.IsCancellationRequested)
             {
                 var nextInstruction = new Instruction(GetNextInstruction());
 
@@ -152,7 +152,7 @@ namespace CHIP8Core
                         break;
                     case 0x1:
                         // Jump to addr
-                        programCounter = iRegister;
+                        programCounter = nextInstruction.addr;
                         break;
                     case 0x2:
                         // Call addr
@@ -486,6 +486,8 @@ namespace CHIP8Core
             {
                 if (DateTime.Now.Subtract(lastClockTick) >= sixtySeconds)
                 {
+                    //TODO action for beep & un-beep
+
                     if (soundTimer > 0)
                     {
                         soundTimer--;
