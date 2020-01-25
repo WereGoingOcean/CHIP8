@@ -40,6 +40,8 @@ namespace CHIP8Core
         /// </summary>
         private readonly ushort[] stack = new ushort[17];
 
+        private readonly Action<bool[,]> updateDisplay;
+
         /// <summary>Decrements at 60hz</summary>
         private byte delayTimer;
 
@@ -61,6 +63,15 @@ namespace CHIP8Core
         /// Byte to point at the top most level of the stack.
         /// </summary>
         private byte stackPointer;
+
+        #endregion
+
+        #region Constructors
+
+        public CHIP8(Action<bool[,]> writeDisplay)
+        {
+            updateDisplay = writeDisplay;
+        }
 
         #endregion
 
@@ -121,7 +132,7 @@ namespace CHIP8Core
 
                 var firstHex = nextInstruction.FirstHex;
 
-                //TODO parse the op code and provide to the proper method
+                // Parse the op code and provide to the proper method
                 switch (firstHex)
                 {
                     case 0x0:
@@ -288,13 +299,73 @@ namespace CHIP8Core
                         generalRegisters[nextInstruction.x] = (byte)(randomVal[0] & nextInstruction.kk);
                         break;
                     case 0xD:
-                        //TODO draw
+
+                        // Draw
                         /*
                          * Dxyn - DRW Vx, Vy, nibble
                                 Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 
                                 The interpreter reads n bytes from memory, starting at the address stored in I. These bytes are then displayed as sprites on screen at coordinates (Vx, Vy). Sprites are XORed onto the existing screen. If this causes any pixels to be erased, VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside the coordinates of the display, it wraps around to the opposite side of the screen. See instruction 8xy3 for more information on XOR, and section 2.4, Display, for more information on the Chip-8 screen and sprites.
                          */
+                        bool[] ConvertByteToBoolArray(byte b)
+                        {
+                            // Prepare the return result
+                            var result = new bool[8];
+
+                            // Check each bit in the byte. if 1 set to true, if 0 set to false
+                            for (var i = 0; i < 8; i++)
+                            {
+                                result[i] = (b & (1 << i)) != 0;
+                            }
+
+                            // Reverse the array
+                            Array.Reverse(result);
+
+                            return result;
+                        }
+
+                        var xVal = nextInstruction.x;
+                        var y = nextInstruction.y;
+
+                        var setVf = false;
+
+                        for (var i = 0; i < nextInstruction.nibble; i++)
+                        {
+                            var row = y + i;
+
+                            var sprite = ram[iRegister + i];
+
+                            var pixelSetting = ConvertByteToBoolArray(sprite);
+
+                            for (var k = 0; k < 8; k++)
+                            {
+                                var column = xVal + k;
+
+                                if (column > 63)
+                                {
+                                    column -= 63;
+                                }
+
+                                var newSetting = displayPixels[column,
+                                                               row]
+                                                 ^ pixelSetting[k];
+
+                                if (!newSetting)
+                                {
+                                    setVf = true;
+                                }
+
+                                displayPixels[column,
+                                              row] = newSetting;
+                            }
+                        }
+
+                        generalRegisters[0xF] = setVf
+                                                    ? (byte)0x1
+                                                    : (byte)0x0;
+
+                        updateDisplay.Invoke(displayPixels);
+
                         break;
                     case 0xE:
                         // Two keyboard commands based on last byte of instruction (kk)
@@ -358,7 +429,7 @@ namespace CHIP8Core
                             case 0x33:
                                 /* Store BCD representation of Vx in memory locations I, I+1, and I+2.
                                    The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2. */
-                                vx = (int)generalRegisters[nextInstruction.x];
+                                vx = generalRegisters[nextInstruction.x];
 
                                 var hundreds = vx / 100;
                                 var tens = vx / 10 % 10;
