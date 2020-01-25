@@ -348,12 +348,17 @@ namespace CHIP8Core
                                 iRegister = (ushort)(generalRegisters[nextInstruction.x] + iRegister);
                                 break;
                             case 0x29:
-                                // TODO Set I = location of sprite for digit Vx.
+                                // Set I = location of sprite for digit Vx.
+                                var vx = (int)generalRegisters[nextInstruction.x];
+
+                                var offset = vx / 5;
+
+                                iRegister = (byte)offset;
                                 break;
                             case 0x33:
                                 /* Store BCD representation of Vx in memory locations I, I+1, and I+2.
                                    The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2. */
-                                var vx = (int)generalRegisters[nextInstruction.x];
+                                vx = (int)generalRegisters[nextInstruction.x];
 
                                 var hundreds = vx / 100;
                                 var tens = vx / 10 % 10;
