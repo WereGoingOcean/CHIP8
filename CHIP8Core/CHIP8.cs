@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace CHIP8Core
 {
@@ -14,6 +15,8 @@ namespace CHIP8Core
         /// at 1536 (0x600). Not sure if the chip knows how to tell.
         /// </summary>
         private static ushort programCounter = 0x200;
+
+        private readonly CancellationTokenSource clockToken = new CancellationTokenSource();
 
         /// <summary>
         /// 16 General Purpose Registers. V_f (register 16) is used as a flag and shouldn't be set by programs.
@@ -39,6 +42,8 @@ namespace CHIP8Core
 
         /// <summary>Decrements at 60hz</summary>
         private byte delayTimer;
+
+        private bool[,] displayPixels = new bool[64, 32];
 
         /// <summary>
         /// I register. Usually stores memory addresses, meaning typically only leftmost 12 bits are used.
@@ -106,7 +111,9 @@ namespace CHIP8Core
 
         public void Start()
         {
-            var lastClockTick = DateTime.Now;
+            LoadSprites();
+
+            Task.Run(() => Clock(clockToken.Token));
 
             while (programCounter < 4096)
             {
@@ -121,7 +128,8 @@ namespace CHIP8Core
                         switch (nextInstruction.instruction)
                         {
                             case 0x00E0:
-                                //TODO clear display
+                                // Clear the display
+                                displayPixels = new bool[64, 32];
                                 break;
                             case 0x00EE:
                                 // Return from sub routine
@@ -384,7 +392,22 @@ namespace CHIP8Core
                         Debug.Write($"Unknown code {nextInstruction}.");
                         break;
                 }
+            }
 
+            Debug.Write("Execution complete.");
+        }
+
+        public void Stop()
+        {
+            clockToken.Cancel();
+        }
+
+        private async void Clock(CancellationToken cancellationToken)
+        {
+            var lastClockTick = DateTime.Now;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
                 if (DateTime.Now.Subtract(lastClockTick) >= sixtySeconds)
                 {
                     if (soundTimer > 0)
@@ -397,9 +420,109 @@ namespace CHIP8Core
                         delayTimer--;
                     }
                 }
-            }
 
-            Debug.Write("Execution complete.");
+                await Task.Delay(1_000);
+            }
+        }
+
+        private void LoadSprites()
+        {
+            // 0
+            ram[0] = 0xF0;
+            ram[1] = 0x90;
+            ram[2] = 0x90;
+            ram[3] = 0x90;
+            ram[4] = 0xF0;
+            // 1
+            ram[5] = 0x20;
+            ram[6] = 0x60;
+            ram[7] = 0x20;
+            ram[8] = 0x20;
+            ram[9] = 0x70;
+            // 2
+            ram[10] = 0xF0;
+            ram[11] = 0x10;
+            ram[12] = 0xF0;
+            ram[13] = 0x80;
+            ram[14] = 0xF0;
+            // 3
+            ram[15] = 0xF0;
+            ram[16] = 0x10;
+            ram[17] = 0xF0;
+            ram[18] = 0x10;
+            ram[19] = 0xF0;
+            // 4
+            ram[20] = 0x90;
+            ram[21] = 0x90;
+            ram[22] = 0xF0;
+            ram[23] = 0x10;
+            ram[24] = 0x10;
+            // 5
+            ram[25] = 0xF0;
+            ram[26] = 0x80;
+            ram[27] = 0xF0;
+            ram[28] = 0x10;
+            ram[29] = 0xF0;
+            // 6
+            ram[30] = 0xF0;
+            ram[31] = 0x80;
+            ram[32] = 0xF0;
+            ram[33] = 0x90;
+            ram[34] = 0xF0;
+            // 7
+            ram[35] = 0xF0;
+            ram[36] = 0x10;
+            ram[37] = 0x20;
+            ram[38] = 0x40;
+            ram[39] = 0x40;
+            // 8
+            ram[40] = 0xF0;
+            ram[41] = 0x90;
+            ram[42] = 0xF0;
+            ram[43] = 0x90;
+            ram[44] = 0xF0;
+            // 9
+            ram[45] = 0xF0;
+            ram[46] = 0x90;
+            ram[47] = 0xF0;
+            ram[48] = 0x10;
+            ram[49] = 0xF0;
+            // A
+            ram[50] = 0xF0;
+            ram[51] = 0x90;
+            ram[52] = 0xF0;
+            ram[53] = 0x90;
+            ram[54] = 0x90;
+            // B
+            ram[55] = 0xE0;
+            ram[56] = 0x90;
+            ram[57] = 0xE0;
+            ram[58] = 0x90;
+            ram[59] = 0xE0;
+            // C
+            ram[60] = 0xF0;
+            ram[61] = 0x80;
+            ram[62] = 0x80;
+            ram[63] = 0x80;
+            ram[64] = 0xF0;
+            // D
+            ram[65] = 0xE0;
+            ram[66] = 0x90;
+            ram[67] = 0x90;
+            ram[68] = 0x90;
+            ram[69] = 0xE0;
+            // E
+            ram[70] = 0xF0;
+            ram[71] = 0x80;
+            ram[72] = 0xF0;
+            ram[73] = 0x80;
+            ram[74] = 0xF0;
+            // F
+            ram[75] = 0xF0;
+            ram[76] = 0x80;
+            ram[77] = 0xF0;
+            ram[78] = 0x80;
+            ram[79] = 0x80;
         }
 
         #endregion
