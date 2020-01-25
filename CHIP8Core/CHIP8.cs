@@ -465,8 +465,8 @@ namespace CHIP8Core
 
                         break;
                     default:
-                        Debug.Write($"Unknown code {nextInstruction}.");
-                        break;
+                        Debug.Write($"Unknown code {nextInstruction}. Ending execution.");
+                        return;
                 }
             }
 
