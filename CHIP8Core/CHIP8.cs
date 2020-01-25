@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 namespace CHIP8Core
 {
@@ -17,6 +19,10 @@ namespace CHIP8Core
         /// 16 General Purpose Registers. V_f (register 16) is used as a flag and shouldn't be set by programs.
         /// </summary>
         private readonly byte[] generalRegisters = new byte[16];
+
+        private readonly ManualResetEventSlim keypressEvent = new ManualResetEventSlim(false);
+
+        private readonly HashSet<byte> pressedKeys = new HashSet<byte>();
 
         private readonly byte[] ram = new byte[4096];
 
@@ -36,6 +42,8 @@ namespace CHIP8Core
         /// I register. Usually stores memory addresses, meaning typically only leftmost 12 bits are used.
         /// </summary>
         private ushort iRegister;
+
+        private byte lastPressedKey;
 
         /// <summary>
         /// Decrements at 60hz. Buzzer sounds when > 0.
@@ -65,6 +73,18 @@ namespace CHIP8Core
             var instruction = (ushort)((msb << 8) | lsb);
 
             return instruction;
+        }
+
+        public void KeyPressed(byte key)
+        {
+            pressedKeys.Add(key);
+            lastPressedKey = key;
+            keypressEvent.Set();
+        }
+
+        public void KeyReleased(byte key)
+        {
+            pressedKeys.Remove(key);
         }
 
         public void LoadProgram(byte[] data)
@@ -271,12 +291,23 @@ namespace CHIP8Core
                             case 0x9E:
                                 /* Skip next instruction if key with the value of Vx is pressed.
                                 Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2. */
+                                if (pressedKeys.Contains(generalRegisters[nextInstruction.x]))
+                                {
+                                    programCounter += 0x2;
+                                }
+
                                 break;
                             case 0xA1:
                                 /* Skip next instruction if key with the value of Vx is not pressed.
                                 Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2. */
+                                if (!pressedKeys.Contains(generalRegisters[nextInstruction.x]))
+                                {
+                                    programCounter += 0x2;
+                                }
+
                                 break;
                         }
+
                         break;
                     case 0xF:
                         switch (nextInstruction.kk)
@@ -288,6 +319,9 @@ namespace CHIP8Core
                             case 0x0A:
                                 // TODO Wait for key press, store key value in vx
                                 // All execution stops TODO even timer?
+                                keypressEvent.Reset();
+                                keypressEvent.Wait();
+                                generalRegisters[nextInstruction.x] = lastPressedKey;
                                 break;
                             case 0x15:
                                 // Set DT = vx
@@ -309,14 +343,26 @@ namespace CHIP8Core
                                     The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2. */
                                 break;
                             case 0x55:
-                                // TODO
+                                var x = nextInstruction.x;
                                 /* Store registers V0 through Vx in memory starting at location I.
                                 The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I. */
+                                for (var i = 0; i < x; x++)
+                                {
+                                    ram[iRegister] = generalRegisters[i];
+                                    iRegister += 1;
+                                }
+
                                 break;
                             case 0x65:
-                                // TODO 
+                                x = nextInstruction.x;
                                 /* Read registers V0 through Vx from memory starting at location I.
                                 The interpreter reads values from memory starting at location I into registers V0 through Vx. */
+                                for (var i = 0; i < x; x++)
+                                {
+                                    generalRegisters[i] = ram[iRegister];
+                                    iRegister += 1;
+                                }
+
                                 break;
                         }
 
