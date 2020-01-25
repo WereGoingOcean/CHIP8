@@ -28,6 +28,8 @@ namespace CHIP8Core
 
         private readonly Random random = new Random();
 
+        private readonly TimeSpan sixtySeconds = TimeSpan.FromSeconds(1.0 / 60.0);
+
         /// <summary>
         /// Stack is an array of 16 16 bit values. Stores the address to return to when a sub routine finishes. CHIP 8 Supports 16 levels.
         /// We have a length 17 here because it starts at 0. But we increment before setting the stack ever. I.E. the first Call we save
@@ -104,6 +106,8 @@ namespace CHIP8Core
 
         public void Start()
         {
+            var lastClockTick = DateTime.Now;
+
             while (programCounter < 4096)
             {
                 var nextInstruction = new Instruction(GetNextInstruction());
@@ -317,7 +321,7 @@ namespace CHIP8Core
                                 generalRegisters[nextInstruction.x] = delayTimer;
                                 break;
                             case 0x0A:
-                                // TODO Wait for key press, store key value in vx
+                                // Wait for key press, store key value in vx
                                 // All execution stops TODO even timer?
                                 keypressEvent.Reset();
                                 keypressEvent.Wait();
@@ -339,8 +343,17 @@ namespace CHIP8Core
                                 // TODO Set I = location of sprite for digit Vx.
                                 break;
                             case 0x33:
-                                /* TODO Store BCD representation of Vx in memory locations I, I+1, and I+2.
-                                    The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2. */
+                                /* Store BCD representation of Vx in memory locations I, I+1, and I+2.
+                                   The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2. */
+                                var vx = (int)generalRegisters[nextInstruction.x];
+
+                                var hundreds = vx / 100;
+                                var tens = vx / 10 % 10;
+                                var ones = vx % 10;
+
+                                ram[iRegister] = (byte)hundreds;
+                                ram[iRegister + 1] = (byte)tens;
+                                ram[iRegister + 2] = (byte)ones;
                                 break;
                             case 0x55:
                                 var x = nextInstruction.x;
@@ -370,6 +383,19 @@ namespace CHIP8Core
                     default:
                         Debug.Write($"Unknown code {nextInstruction}.");
                         break;
+                }
+
+                if (DateTime.Now.Subtract(lastClockTick) >= sixtySeconds)
+                {
+                    if (soundTimer > 0)
+                    {
+                        soundTimer--;
+                    }
+
+                    if (delayTimer > 0)
+                    {
+                        delayTimer--;
+                    }
                 }
             }
 
