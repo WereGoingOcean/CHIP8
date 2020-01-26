@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
+using Moq;
+
 using Xunit;
 
 namespace CHIP8Core.Test
@@ -15,13 +17,16 @@ namespace CHIP8Core.Test
             /*
              * 8xy0 - LD Vx, Vy Set Vx = Vy. Stores the value of register Vy in register Vx.
              */
+            var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null);
+            var emulator = new CHIP8(null,
+                                     registers);
+
+            registers.SetGeneralValue(1,
+                                      0xAC);
 
             var instructions = new byte[]
                                {
-                                   0x61, //LD v1 with 0xAC
-                                   0xAC,
                                    0x80, //LD v0 with v1
                                    0x10
                                };
@@ -30,18 +35,8 @@ namespace CHIP8Core.Test
 
             emulator.Start();
 
-            var registers = GetRegisters(emulator);
-
             Assert.Equal(0xAC,
-                         registers[0]);
-        }
-
-        public byte[] GetRegisters(CHIP8 emulator)
-        {
-            //TODO need to break registers & ram into their own classes
-            return (byte[])typeof(CHIP8).GetField("generalRegisters",
-                                                  BindingFlags.Instance | BindingFlags.NonPublic)
-                                        .GetValue(emulator);
+                         registers.GetGeneralValue(0));
         }
     }
 }
