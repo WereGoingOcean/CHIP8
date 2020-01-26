@@ -38,6 +38,7 @@ namespace CHIP8Core.Test
 
         public byte[] GetRegisters(CHIP8 emulator)
         {
+            //TODO need to break registers & ram into their own classes
             return (byte[])typeof(CHIP8).GetField("generalRegisters",
                                                   BindingFlags.Instance | BindingFlags.NonPublic)
                                         .GetValue(emulator);

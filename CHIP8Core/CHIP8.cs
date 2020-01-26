@@ -18,11 +18,6 @@ namespace CHIP8Core
 
         private readonly CancellationTokenSource clockToken = new CancellationTokenSource();
 
-        /// <summary>
-        /// 16 General Purpose Registers. V_f (register 16) is used as a flag and shouldn't be set by programs.
-        /// </summary>
-        private readonly byte[] generalRegisters = new byte[16];
-
         private readonly ManualResetEventSlim keypressEvent = new ManualResetEventSlim(false);
 
         private readonly HashSet<byte> pressedKeys = new HashSet<byte>();
@@ -30,6 +25,8 @@ namespace CHIP8Core
         private readonly byte[] ram = new byte[4096];
 
         private readonly Random random = new Random();
+
+        private readonly IRegisterModule registerModule;
 
         private readonly TimeSpan sixtySeconds = TimeSpan.FromSeconds(1.0 / 60.0);
 
@@ -47,11 +44,6 @@ namespace CHIP8Core
 
         private bool[,] displayPixels = new bool[64, 32];
 
-        /// <summary>
-        /// I register. Usually stores memory addresses, meaning typically only leftmost 12 bits are used.
-        /// </summary>
-        private ushort iRegister;
-
         private byte lastPressedKey;
 
         /// <summary>
@@ -68,9 +60,11 @@ namespace CHIP8Core
 
         #region Constructors
 
-        public CHIP8(Action<bool[,]> writeDisplay)
+        public CHIP8(Action<bool[,]> writeDisplay,
+                     IRegisterModule registerModule)
         {
             updateDisplay = writeDisplay;
+            this.registerModule = registerModule;
         }
 
         #endregion
@@ -126,7 +120,8 @@ namespace CHIP8Core
 
             Task.Run(() => Clock(clockToken.Token));
 
-            while (programCounter < 4096 && !clockToken.IsCancellationRequested)
+            while (programCounter < 4096
+                   && !clockToken.IsCancellationRequested)
             {
                 var nextInstruction = new Instruction(GetNextInstruction());
 
@@ -162,7 +157,7 @@ namespace CHIP8Core
                         break;
                     case 0x3:
                         // Skip next instruction if vx = kk
-                        if (generalRegisters[nextInstruction.x] == nextInstruction.kk)
+                        if (registerModule.GetGeneralValue(nextInstruction.x) == nextInstruction.kk)
                         {
                             programCounter += 0x2;
                         }
@@ -170,7 +165,7 @@ namespace CHIP8Core
                         break;
                     case 0x4:
                         // Skip next instruction if vx != kk
-                        if (generalRegisters[nextInstruction.x] != nextInstruction.kk)
+                        if (registerModule.GetGeneralValue(nextInstruction.x) != nextInstruction.kk)
                         {
                             programCounter += 0x2;
                         }
@@ -178,7 +173,7 @@ namespace CHIP8Core
                         break;
                     case 0x5:
                         //Skip next instruction if vx = vy
-                        if (generalRegisters[nextInstruction.x] == generalRegisters[nextInstruction.y])
+                        if (registerModule.GetGeneralValue(nextInstruction.x) == registerModule.GetGeneralValue(nextInstruction.y))
                         {
                             programCounter += 0x2;
                         }
@@ -186,11 +181,13 @@ namespace CHIP8Core
                         break;
                     case 0x6:
                         // Load kk into register vx
-                        generalRegisters[nextInstruction.x] = nextInstruction.kk;
+                        registerModule.SetGeneralValue(nextInstruction.x,
+                                                       nextInstruction.kk);
                         break;
                     case 0x7:
                         // Add kk to vx then store in vx
-                        generalRegisters[nextInstruction.x] += nextInstruction.kk;
+                        registerModule.SetGeneralValue(nextInstruction.x,
+                                                       (byte)(registerModule.GetGeneralValue(nextInstruction.x) + nextInstruction.kk));
                         break;
                     case 0x8:
                         // Arithmetic op codes
@@ -198,86 +195,101 @@ namespace CHIP8Core
                         {
                             case 0x0:
                                 // Store vy in vx
-                                generalRegisters[nextInstruction.x] = generalRegisters[nextInstruction.y];
+                                registerModule.SetGeneralValue(nextInstruction.x,
+                                                               registerModule.GetGeneralValue(nextInstruction.y));
                                 break;
                             case 0x1:
                                 // Bitwise or on vx and vy, stored in vx
-                                generalRegisters[nextInstruction.x] = (byte)(generalRegisters[nextInstruction.x] | generalRegisters[nextInstruction.y]);
+                                registerModule.SetGeneralValue(nextInstruction.x,
+                                                               (byte)(registerModule.GetGeneralValue(nextInstruction.x) | registerModule.GetGeneralValue(nextInstruction.y)));
                                 break;
                             case 0x2:
                                 // Bitwise and on vx and vy, stored in vx
-                                generalRegisters[nextInstruction.x] = (byte)(generalRegisters[nextInstruction.x] & generalRegisters[nextInstruction.y]);
+                                registerModule.SetGeneralValue(nextInstruction.x,
+                                                               (byte)(registerModule.GetGeneralValue(nextInstruction.x) & registerModule.GetGeneralValue(nextInstruction.y)));
                                 break;
                             case 0x3:
                                 // Bitwise xor on vx and vy, stored in vx
-                                generalRegisters[nextInstruction.x] = (byte)(generalRegisters[nextInstruction.x] ^ generalRegisters[nextInstruction.y]);
+                                registerModule.SetGeneralValue(nextInstruction.x,
+                                                               (byte)(registerModule.GetGeneralValue(nextInstruction.x) ^ registerModule.GetGeneralValue(nextInstruction.y)));
                                 break;
                             case 0x4:
                                 var x = nextInstruction.x;
 
                                 // Add vx and vy. Set vf = 1 if carry (> 8 bit result) otherwise set to 0. Keep lower 8 bits in vx.
-                                var result = (ushort)(generalRegisters[x] + generalRegisters[nextInstruction.y]);
+                                var result = (ushort)(registerModule.GetGeneralValue(x) + registerModule.GetGeneralValue(nextInstruction.y));
 
                                 if ((byte)(result >> 8) > 0x0) //Shift upper bytes then cast to remove all but lower 8 bits
                                 {
-                                    generalRegisters[0xF] = 0x1;
+                                    registerModule.SetGeneralValue(0xF,
+                                                                   0x1);
                                 }
                                 else
                                 {
-                                    generalRegisters[0xF] = 0x0;
+                                    registerModule.SetGeneralValue(0xF,
+                                                                   0x0);
                                 }
 
-                                generalRegisters[x] = (byte)result; // Casting to byte should only take lower bits
+                                registerModule.SetGeneralValue(x,
+                                                               (byte)result); // Casting to byte should only take lower bits
                                 break;
                             case 0x5:
                                 x = nextInstruction.x;
 
-                                var vy = generalRegisters[nextInstruction.y];
-                                var vx = generalRegisters[x];
+                                var vy = registerModule.GetGeneralValue(nextInstruction.y);
+                                var vx = registerModule.GetGeneralValue(x);
 
                                 // Sub vy from vx. Store result in vx. If vx > vy set vf = 1, otherwise set vf = 0
-                                generalRegisters[0xF] = vx > vy
-                                                            ? (byte)0x1
-                                                            : (byte)0x0;
+                                registerModule.SetGeneralValue(0xF,
+                                                               vx > vy
+                                                                   ? (byte)0x1
+                                                                   : (byte)0x0);
 
-                                generalRegisters[x] = (byte)(vx - vy);
+                                registerModule.SetGeneralValue(x,
+                                                               (byte)(vx - vy));
                                 break;
                             case 0x6:
                                 x = nextInstruction.x;
-                                vx = generalRegisters[x];
+                                vx = registerModule.GetGeneralValue(x);
 
                                 // If the least - significant bit of Vx is 1, then VF is set to 1, otherwise 0.Then Vx is divided by 2.
-                                generalRegisters[0xF] = (byte)(vx & 0x1);
+                                registerModule.SetGeneralValue(0xF,
+                                                               (byte)(vx & 0x1));
 
-                                generalRegisters[x] = (byte)(vx / 2);
+                                registerModule.SetGeneralValue(x,
+                                                               (byte)(vx / 2));
                                 break;
                             case 0x7:
                                 x = nextInstruction.x;
-                                vx = generalRegisters[x];
-                                vy = generalRegisters[nextInstruction.y];
+                                vx = registerModule.GetGeneralValue(x);
+                                vy = registerModule.GetGeneralValue(nextInstruction.y);
 
                                 // If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and the results stored in Vx.
-                                generalRegisters[0xF] = vy > vx
-                                                            ? (byte)0x1
-                                                            : (byte)0x0;
+                                registerModule.SetGeneralValue(0xF,
+                                                               vy > vx
+                                                                   ? (byte)0x1
+                                                                   : (byte)0x0);
 
-                                generalRegisters[x] = (byte)(vy - vx);
+                                registerModule.SetGeneralValue(x,
+                                                               (byte)(vy - vx));
                                 break;
                             case 0xE:
                                 x = nextInstruction.x;
-                                vx = generalRegisters[x];
+                                vx = registerModule.GetGeneralValue(x);
 
                                 // If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is multiplied by 2.
-                                generalRegisters[0xF] = (byte)((vx & 0x80) >> 7); // Mask all but highest bit, then shift left to get 0 or 1
+                                registerModule.SetGeneralValue(0xF,
+                                                               (byte)((vx & 0x80) >> 7)); // Mask all but highest bit, then shift left to get 0 or 1
 
-                                generalRegisters[x] = (byte)(vx / 2);
+                                registerModule.SetGeneralValue(x,
+                                                               (byte)(vx / 2));
                                 break;
                         }
 
                         break;
                     case 0x9:
                         // Skip next instruction if vx != vy
-                        if (generalRegisters[nextInstruction.x] != generalRegisters[nextInstruction.y])
+                        if (registerModule.GetGeneralValue(nextInstruction.x) != registerModule.GetGeneralValue(nextInstruction.y))
                         {
                             programCounter += 0x2;
                         }
@@ -285,18 +297,19 @@ namespace CHIP8Core
                         break;
                     case 0xA:
                         // Set I to nnn (addr)
-                        iRegister = nextInstruction.addr;
+                        registerModule.SetI(nextInstruction.addr);
                         break;
                     case 0xB:
                         //Set PC to nnn + v0
-                        programCounter = (ushort)(generalRegisters[0] + nextInstruction.addr);
+                        programCounter = (ushort)(registerModule.GetGeneralValue(0) + nextInstruction.addr);
                         break;
                     case 0xC:
                         // RND, gen random between 0 - 255. Rand & kk -> vx
                         var randomVal = new byte[1];
                         random.NextBytes(randomVal);
 
-                        generalRegisters[nextInstruction.x] = (byte)(randomVal[0] & nextInstruction.kk);
+                        registerModule.SetGeneralValue(nextInstruction.x,
+                                                       (byte)(randomVal[0] & nextInstruction.kk));
                         break;
                     case 0xD:
 
@@ -333,7 +346,7 @@ namespace CHIP8Core
                         {
                             var row = y + i;
 
-                            var sprite = ram[iRegister + i];
+                            var sprite = ram[registerModule.GetI() + i];
 
                             var pixelSetting = ConvertByteToBoolArray(sprite);
 
@@ -360,9 +373,10 @@ namespace CHIP8Core
                             }
                         }
 
-                        generalRegisters[0xF] = setVf
-                                                    ? (byte)0x1
-                                                    : (byte)0x0;
+                        registerModule.SetGeneralValue(0xF,
+                                                       setVf
+                                                           ? (byte)0x1
+                                                           : (byte)0x0);
 
                         updateDisplay.Invoke(displayPixels);
 
@@ -374,7 +388,7 @@ namespace CHIP8Core
                             case 0x9E:
                                 /* Skip next instruction if key with the value of Vx is pressed.
                                 Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2. */
-                                if (pressedKeys.Contains(generalRegisters[nextInstruction.x]))
+                                if (pressedKeys.Contains(registerModule.GetGeneralValue(nextInstruction.x)))
                                 {
                                     programCounter += 0x2;
                                 }
@@ -383,7 +397,7 @@ namespace CHIP8Core
                             case 0xA1:
                                 /* Skip next instruction if key with the value of Vx is not pressed.
                                 Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2. */
-                                if (!pressedKeys.Contains(generalRegisters[nextInstruction.x]))
+                                if (!pressedKeys.Contains(registerModule.GetGeneralValue(nextInstruction.x)))
                                 {
                                     programCounter += 0x2;
                                 }
@@ -397,47 +411,51 @@ namespace CHIP8Core
                         {
                             case 0x07:
                                 // Set vx = delay timer
-                                generalRegisters[nextInstruction.x] = delayTimer;
+                                registerModule.SetGeneralValue(nextInstruction.x,
+                                                               delayTimer);
                                 break;
                             case 0x0A:
                                 // Wait for key press, store key value in vx
                                 // All execution stops TODO even timer?
                                 keypressEvent.Reset();
                                 keypressEvent.Wait();
-                                generalRegisters[nextInstruction.x] = lastPressedKey;
+                                registerModule.SetGeneralValue(nextInstruction.x,
+                                                               lastPressedKey);
                                 break;
                             case 0x15:
                                 // Set DT = vx
-                                delayTimer = generalRegisters[nextInstruction.x];
+                                delayTimer = registerModule.GetGeneralValue(nextInstruction.x);
                                 break;
                             case 0x18:
                                 // Set ST = vx
-                                soundTimer = generalRegisters[nextInstruction.x];
+                                soundTimer = registerModule.GetGeneralValue(nextInstruction.x);
                                 break;
                             case 0x1E:
                                 // Set I = I + vx
-                                iRegister = (ushort)(generalRegisters[nextInstruction.x] + iRegister);
+                                registerModule.SetI((ushort)(registerModule.GetGeneralValue(nextInstruction.x) + registerModule.GetI()));
                                 break;
                             case 0x29:
                                 // Set I = location of sprite for digit Vx.
-                                var vx = (int)generalRegisters[nextInstruction.x];
+                                var vx = (int)registerModule.GetGeneralValue(nextInstruction.x);
 
                                 var offset = vx / 5;
 
-                                iRegister = (byte)offset;
+                                registerModule.SetI((byte)offset);
                                 break;
                             case 0x33:
                                 /* Store BCD representation of Vx in memory locations I, I+1, and I+2.
                                    The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2. */
-                                vx = generalRegisters[nextInstruction.x];
+                                vx = registerModule.GetGeneralValue(nextInstruction.x);
 
                                 var hundreds = vx / 100;
                                 var tens = vx / 10 % 10;
                                 var ones = vx % 10;
 
-                                ram[iRegister] = (byte)hundreds;
-                                ram[iRegister + 1] = (byte)tens;
-                                ram[iRegister + 2] = (byte)ones;
+                                var iVal = registerModule.GetI();
+
+                                ram[iVal] = (byte)hundreds;
+                                ram[iVal + 1] = (byte)tens;
+                                ram[iVal + 2] = (byte)ones;
                                 break;
                             case 0x55:
                                 var x = nextInstruction.x;
@@ -445,8 +463,10 @@ namespace CHIP8Core
                                 The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I. */
                                 for (var i = 0; i < x; x++)
                                 {
-                                    ram[iRegister] = generalRegisters[i];
-                                    iRegister += 1;
+                                    iVal = registerModule.GetI();
+
+                                    ram[iVal] = registerModule.GetGeneralValue(i);
+                                    registerModule.SetI((ushort)(iVal + 1));
                                 }
 
                                 break;
@@ -456,8 +476,11 @@ namespace CHIP8Core
                                 The interpreter reads values from memory starting at location I into registers V0 through Vx. */
                                 for (var i = 0; i < x; x++)
                                 {
-                                    generalRegisters[i] = ram[iRegister];
-                                    iRegister += 1;
+                                    iVal = registerModule.GetI();
+
+                                    registerModule.SetGeneralValue(i,
+                                                                   ram[iVal]);
+                                    registerModule.SetI((ushort)(iVal + 1));
                                 }
 
                                 break;
