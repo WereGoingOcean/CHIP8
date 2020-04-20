@@ -14,7 +14,7 @@ namespace CHIP8Core
         /// 16 bit register for program counter. Not accessible by programs. Typically starts at 512 (0x200). Some programs (ETI 600) start
         /// at 1536 (0x600). Not sure if the chip knows how to tell.
         /// </summary>
-        private static ushort programCounter = 0x200;
+        private ushort programCounter = 0x200;
 
         private readonly CancellationTokenSource clockToken = new CancellationTokenSource();
 
@@ -488,12 +488,12 @@ namespace CHIP8Core
 
                         break;
                     default:
-                        Debug.Write($"Unknown code {nextInstruction}. Ending execution.");
+                        Trace.WriteLine($"Unknown code {nextInstruction}. Ending execution.");
                         return;
                 }
             }
 
-            Debug.Write("Execution complete.");
+            Trace.WriteLine("Execution complete.");
         }
 
         public void Stop()
