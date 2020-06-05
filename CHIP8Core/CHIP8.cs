@@ -282,7 +282,7 @@ namespace CHIP8Core
                                                                (byte)((vx & 0x80) >> 7)); // Mask all but highest bit, then shift left to get 0 or 1
 
                                 registerModule.SetGeneralValue(x,
-                                                               (byte)(vx / 2));
+                                                               (byte)(vx * 2));
                                 break;
                         }
 

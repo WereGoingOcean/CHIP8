@@ -98,9 +98,12 @@ namespace CHIP8Emulator
 
         public MainWindow()
         {
-            emulator = new CHIP8(DisplayEmulatorScreen);
+            var registers = new RegisterModule();
 
-            var bytes = File.ReadAllBytes("test_opcode.ch8");
+            emulator = new CHIP8(DisplayEmulatorScreen,
+                                 registers);
+
+            var bytes = File.ReadAllBytes("test_display_0.ch8");
 
             emulator.LoadProgram(bytes);
 
@@ -108,6 +111,11 @@ namespace CHIP8Emulator
 
             this.KeyDown += MainWindow_KeyDown;
             this.KeyUp += MainWindow_KeyUp;
+        }
+
+        protected override void OnInitialized(EventArgs e)
+        {
+            base.OnInitialized(e);
 
             Task.Run(() => emulator.Start());
         }

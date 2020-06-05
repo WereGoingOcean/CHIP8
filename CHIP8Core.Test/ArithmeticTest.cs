@@ -1,39 +1,16 @@
-﻿using Xunit;
+﻿using System.Collections;
+
+using Xunit;
 
 namespace CHIP8Core.Test
 {
     public class ArithmeticTest
     {
-        [Fact]
-        public void LD_vx_byte()
-        {
-            //TODO only the 8... codes are arithmetic
-            /*
-             * 6xkk - LD Vx, byte Set Vx = kk. The interpreter puts the value kk into register Vx.
-             */
-            var registers = new RegisterModule();
-
-            var emulator = new CHIP8(null,
-                                     registers);
-
-            var instructions = new byte[]
-                               {
-                                   0x60, //LD v0 with byte 0x12
-                                   0x12
-                               };
-
-            emulator.LoadProgram(instructions);
-
-            emulator.Start();
-
-            Assert.Equal(0x12,
-                         registers.GetGeneralValue(0));
-        }
+        #region Instance Methods
 
         [Fact]
-        public void ADD_vx_byte()
+        public void _7xkk_ADD_vx_byte()
         {
-            //TODO only the 8... codes are arithmetic
             /*
              * 7xkk - ADD Vx, byte Set Vx = Vx + kk. Adds the value kk to the value of register Vx, then stores the result in Vx.
              */
@@ -62,7 +39,7 @@ namespace CHIP8Core.Test
         }
 
         [Fact]
-        public void LD_vx_vy()
+        public void _8xy0_LD_vx_vy()
         {
             /*
              * 8xy0 - LD Vx, Vy Set Vx = Vy. Stores the value of register Vy in register Vx.
@@ -91,10 +68,14 @@ namespace CHIP8Core.Test
         }
 
         [Theory]
-        [InlineData(0x1, 0x0)]
-        [InlineData(0x0, 0x1)]
-        [InlineData(0x0, 0x0)]
-        public void OR_vx_vy(byte v0, byte v1)
+        [InlineData(0x1,
+                    0x0)]
+        [InlineData(0x0,
+                    0x1)]
+        [InlineData(0x0,
+                    0x0)]
+        public void _8xy1_OR_vx_vy(byte v0,
+                                   byte v1)
         {
             /*
              * 
@@ -108,7 +89,6 @@ Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx. 
             var emulator = new CHIP8(null,
                                      registers);
 
-
             registers.SetGeneralValue(0,
                                       v0);
             registers.SetGeneralValue(1,
@@ -117,7 +97,7 @@ Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx. 
             // Set v0 = v0 || v1
             var instructions = new byte[]
                                {
-                                   0x80, 
+                                   0x80,
                                    0x11
                                };
 
@@ -132,10 +112,14 @@ Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx. 
         }
 
         [Theory]
-        [InlineData(0x1, 0x0)]
-        [InlineData(0x0, 0x1)]
-        [InlineData(0x0, 0x0)]
-        public void AND_vx_vy(byte v0, byte v1)
+        [InlineData(0x1,
+                    0x0)]
+        [InlineData(0x0,
+                    0x1)]
+        [InlineData(0x0,
+                    0x0)]
+        public void _8xy2_AND_vx_vy(byte v0,
+                                    byte v1)
         {
             /*
              * 
@@ -148,7 +132,6 @@ Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx.
 
             var emulator = new CHIP8(null,
                                      registers);
-
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -172,10 +155,14 @@ Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx.
         }
 
         [Theory]
-        [InlineData(0x1, 0x0)]
-        [InlineData(0x0, 0x1)]
-        [InlineData(0x0, 0x0)]
-        public void XOR_vx_vy(byte v0, byte v1)
+        [InlineData(0x1,
+                    0x0)]
+        [InlineData(0x0,
+                    0x1)]
+        [InlineData(0x0,
+                    0x0)]
+        public void _8xy3_XOR_vx_vy(byte v0,
+                                    byte v1)
         {
             /*
              * 
@@ -188,7 +175,6 @@ Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the resu
 
             var emulator = new CHIP8(null,
                                      registers);
-
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -212,10 +198,14 @@ Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the resu
         }
 
         [Theory]
-        [InlineData(0x12, 0xAC)]
-        [InlineData(0xAA, 0xAA)]
-        [InlineData(0x12, 0x3)]
-        public void ADD_vx_vy(byte v0, byte v1)
+        [InlineData(0x12,
+                    0xAC)]
+        [InlineData(0xAA,
+                    0xAA)]
+        [InlineData(0x12,
+                    0x3)]
+        public void _8xy4_ADD_vx_vy(byte v0,
+                                    byte v1)
         {
             /*
              * 
@@ -229,7 +219,7 @@ The values of Vx and Vy are added together. If the result is greater than 8 bits
 
             var emulator = new CHIP8(null,
                                      registers);
-            
+
             registers.SetGeneralValue(0,
                                       v0);
             registers.SetGeneralValue(1,
@@ -257,5 +247,203 @@ The values of Vx and Vy are added together. If the result is greater than 8 bits
             Assert.Equal(expectedFlag,
                          registers.GetGeneralValue(0xF));
         }
+
+        [Theory]
+        [InlineData(0x12,
+                    0xAC)]
+        [InlineData(0xAA,
+                    0xAA)]
+        [InlineData(0x12,
+                    0x3)]
+        public void _8xy5_SUB_vx_vy(byte v0, 
+                                    byte v1)
+        {
+            /*
+8xy5 - SUB Vx, Vy
+Set Vx = Vx - Vy, set VF = NOT borrow.
+
+If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and the results stored in Vx.
+             */
+
+            var registers = new RegisterModule();
+
+            var emulator = new CHIP8(null,
+                                     registers);
+
+            registers.SetGeneralValue(0,
+                                      v0);
+            registers.SetGeneralValue(1,
+                                      v1);
+
+            var instructions = new byte[]
+                               {
+                                   0x80,
+                                   0x15
+                               };
+
+            emulator.LoadProgram(instructions);
+
+            emulator.Start();
+
+            var expectedResult = (v0 - v1) & 0xFF; // Only lowest 8bits is kept in the case we're > 255
+
+            Assert.Equal(expectedResult,
+                         registers.GetGeneralValue(0));
+
+            var expectedFlag = v0 > v1
+                                   ? 0x1
+                                   : 0x0;
+
+            Assert.Equal(expectedFlag,
+                         registers.GetGeneralValue(0xF));
+        }
+
+
+
+        [Theory]
+        [InlineData(0x12,
+                    0xAC)]
+        [InlineData(0xAA,
+                    0xAA)]
+        [InlineData(0x12,
+                    0x3)]
+        public void _8xy6_SHR_vx_vy(byte v0, byte v1)
+        {
+            /*
+8xy6 - SHR Vx {, Vy}
+Set Vx = Vx SHR 1.
+
+If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided by 2.
+             */
+            var registers = new RegisterModule();
+
+            var emulator = new CHIP8(null,
+                                     registers);
+
+            registers.SetGeneralValue(0,
+                                      v0);
+            registers.SetGeneralValue(1,
+                                      v1);
+
+            var instructions = new byte[]
+                               {
+                                   0x80,
+                                   0x16
+                               };
+
+            emulator.LoadProgram(instructions);
+
+            emulator.Start();
+
+            var expectedResult = (v0 / 2) & 0xFF; // Only lowest 8bits is kept in the case we're > 255
+
+            Assert.Equal(expectedResult,
+                         registers.GetGeneralValue(0));
+
+            var expectedFlag = v0 & 0x1;
+
+            Assert.Equal(expectedFlag,
+                         registers.GetGeneralValue(0xF));
+        }
+
+        [Theory]
+        [InlineData(0x12,
+                    0xAC)]
+        [InlineData(0xAA,
+                    0xAA)]
+        [InlineData(0x12,
+                    0x3)]
+        public void _8xy7_SUBN_vx_vy(byte v0, byte v1)
+        {
+            /*
+8xy7 - SUBN Vx, Vy
+Set Vx = Vy - Vx, set VF = NOT borrow.
+
+If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and the results stored in Vx.             */
+            var registers = new RegisterModule();
+
+            var emulator = new CHIP8(null,
+                                     registers);
+
+            registers.SetGeneralValue(0,
+                                      v0);
+            registers.SetGeneralValue(1,
+                                      v1);
+
+            var instructions = new byte[]
+                               {
+                                   0x80,
+                                   0x17
+                               };
+
+            emulator.LoadProgram(instructions);
+
+            emulator.Start();
+
+            var expectedResult = (v1 - v0) & 0xFF; // Only lowest 8bits is kept in the case we're > 255
+
+            Assert.Equal(expectedResult,
+                         registers.GetGeneralValue(0));
+
+            var expectedFlag = v1 > v0
+                                   ? 0x1
+                                   : 0x0;
+
+            Assert.Equal(expectedFlag,
+                         registers.GetGeneralValue(0xF));
+        }
+
+        [Theory]
+        [InlineData(0x12,
+                    0xAC)]
+        [InlineData(0xAA,
+                    0xAA)]
+        [InlineData(0x12,
+                    0x3)]
+        public void _8xyE_SHL_vx_vy(byte v0, byte v1)
+        {
+            /*
+8xyE - SHL Vx {, Vy}
+Set Vx = Vx SHL 1.
+
+If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is multiplied by 2.
+             */
+            var registers = new RegisterModule();
+
+            var emulator = new CHIP8(null,
+                                     registers);
+
+            registers.SetGeneralValue(0,
+                                      v0);
+            registers.SetGeneralValue(1,
+                                      v1);
+
+            var instructions = new byte[]
+                               {
+                                   0x80,
+                                   0x1E
+                               };
+
+            emulator.LoadProgram(instructions);
+
+            emulator.Start();
+
+            var expectedResult = (v0 * 2) & 0xFF; // Only lowest 8bits is kept in the case we're > 255
+
+            Assert.Equal(expectedResult,
+                         registers.GetGeneralValue(0));
+
+            var expectedFlag = new BitArray(new[]
+                                            {
+                                                v0
+                                            }).Get(7)
+                                   ? 0x1
+                                   : 0x0;
+
+            Assert.Equal(expectedFlag,
+                         registers.GetGeneralValue(0xF));
+        }
+
+        #endregion
     }
 }
