@@ -11,7 +11,7 @@
         #endregion
     }
 
-    public class StackModule
+    public class StackModule : IStackModule
     {
         #region Fields
 
@@ -34,7 +34,7 @@
         public ushort Pop()
         {
             var value = stack[stackPointer];
-            stackPointer -= 1;
+            stackPointer -= 0x1;
             return value;
         }
 

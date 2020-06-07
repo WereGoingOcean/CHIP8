@@ -16,8 +16,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             // Set v0 to 0x10
             registers.SetGeneralValue(0,
@@ -46,8 +45,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             // Set v1 to AC
             registers.SetGeneralValue(1,
@@ -86,8 +84,7 @@ Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx. 
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -130,8 +127,7 @@ Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx.
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -173,8 +169,7 @@ Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the resu
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -217,8 +212,7 @@ The values of Vx and Vy are added together. If the result is greater than 8 bits
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -255,7 +249,7 @@ The values of Vx and Vy are added together. If the result is greater than 8 bits
                     0xAA)]
         [InlineData(0x12,
                     0x3)]
-        public void _8xy5_SUB_vx_vy(byte v0, 
+        public void _8xy5_SUB_vx_vy(byte v0,
                                     byte v1)
         {
             /*
@@ -267,8 +261,7 @@ If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and
 
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -298,8 +291,6 @@ If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and
                          registers.GetGeneralValue(0xF));
         }
 
-
-
         [Theory]
         [InlineData(0x12,
                     0xAC)]
@@ -307,7 +298,8 @@ If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and
                     0xAA)]
         [InlineData(0x12,
                     0x3)]
-        public void _8xy6_SHR_vx_vy(byte v0, byte v1)
+        public void _8xy6_SHR_vx_vy(byte v0,
+                                    byte v1)
         {
             /*
 8xy6 - SHR Vx {, Vy}
@@ -317,8 +309,7 @@ If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then 
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -353,7 +344,8 @@ If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then 
                     0xAA)]
         [InlineData(0x12,
                     0x3)]
-        public void _8xy7_SUBN_vx_vy(byte v0, byte v1)
+        public void _8xy7_SUBN_vx_vy(byte v0,
+                                     byte v1)
         {
             /*
 8xy7 - SUBN Vx, Vy
@@ -362,8 +354,7 @@ Set Vx = Vy - Vx, set VF = NOT borrow.
 If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and the results stored in Vx.             */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -400,7 +391,8 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
                     0xAA)]
         [InlineData(0x12,
                     0x3)]
-        public void _8xyE_SHL_vx_vy(byte v0, byte v1)
+        public void _8xyE_SHL_vx_vy(byte v0,
+                                    byte v1)
         {
             /*
 8xyE - SHL Vx {, Vy}
@@ -410,8 +402,7 @@ If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. The
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers);
+            var emulator = GetChip(registers);
 
             registers.SetGeneralValue(0,
                                       v0);
@@ -442,6 +433,13 @@ If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. The
 
             Assert.Equal(expectedFlag,
                          registers.GetGeneralValue(0xF));
+        }
+
+        private CHIP8 GetChip(IRegisterModule registers)
+        {
+            return new CHIP8(null,
+                             registers,
+                             new StackModule());
         }
 
         #endregion

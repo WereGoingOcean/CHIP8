@@ -101,7 +101,8 @@ namespace CHIP8Emulator
             var registers = new RegisterModule();
 
             emulator = new CHIP8(DisplayEmulatorScreen,
-                                 registers);
+                                 registers,
+                                 new StackModule());
 
             var bytes = File.ReadAllBytes("test_display_0.ch8");
 

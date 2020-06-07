@@ -105,6 +105,8 @@ namespace CHIP8Core
                        512,
                        data.Length);
         }
+        
+        public event EventHandler Tick;
 
         public void Start()
         {
@@ -481,6 +483,9 @@ namespace CHIP8Core
                         Trace.WriteLine($"Unknown code {nextInstruction}. Ending execution.");
                         return;
                 }
+
+                Tick(this,
+                     null);
             }
 
             Trace.WriteLine("Execution complete.");

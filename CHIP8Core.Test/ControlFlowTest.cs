@@ -1,14 +1,56 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Reflection;
+
+using Xunit;
 
 namespace CHIP8Core.Test
 {
     public class ControlFlowTest
     {
-        public void _00EE_RET()
-        {
+        #region Instance Methods
 
+        [Theory]
+        [InlineData(600)]
+        public void _00EE_RET(ushort addr)
+        {
+            // Make sure it's a valid address and doesn't cause an infinite loop
+            Assert.InRange(addr,
+                           514,
+                           4094);
+
+            var stackModule = new StackModule();
+
+            var registerModule = new RegisterModule();
+
+            stackModule.Push(addr);
+
+            var instructions = new byte[]
+                               {
+                                   0x00,
+                                   0xEE
+                               };
+
+            var chip = new CHIP8(null,
+                                 registerModule,
+                                 stackModule);
+
+            chip.LoadProgram(instructions);
+
+            chip.Tick += (c,
+                          e) =>
+                         {
+                             chip.Stop();
+                         };
+
+            chip.Start();
+
+            var programCounter = (ushort)typeof(CHIP8).GetField("programCounter",
+                                                                BindingFlags.Instance | BindingFlags.NonPublic)
+                                                      .GetValue(chip);
+
+            Assert.Equal(addr,
+                         programCounter);
         }
+
+        #endregion
     }
 }

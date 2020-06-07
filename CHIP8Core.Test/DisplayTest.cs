@@ -20,7 +20,8 @@ namespace CHIP8Core.Test
             }
 
             var emulator = new CHIP8(WriteDisplay,
-                                     registers);
+                                     registers,
+                                     new StackModule());
 
             registers.SetGeneralValue(0,
                                       0x0);

@@ -15,7 +15,8 @@ namespace CHIP8Core.Test
             var registers = new RegisterModule();
 
             var emulator = new CHIP8(null,
-                                     registers);
+                                     registers,
+                                     new StackModule());
 
             var instructions = new byte[]
                                {
