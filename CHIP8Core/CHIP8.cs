@@ -28,14 +28,9 @@ namespace CHIP8Core
 
         private readonly IRegisterModule registerModule;
 
-        private readonly TimeSpan sixtySeconds = TimeSpan.FromSeconds(1.0 / 60.0);
+        private readonly IStackModule stackModule;
 
-        /// <summary>
-        /// Stack is an array of 16 16 bit values. Stores the address to return to when a sub routine finishes. CHIP 8 Supports 16 levels.
-        /// We have a length 17 here because it starts at 0. But we increment before setting the stack ever. I.E. the first Call we save
-        /// the PC in stack[1].
-        /// </summary>
-        private readonly ushort[] stack = new ushort[17];
+        private readonly TimeSpan sixtySeconds = TimeSpan.FromSeconds(1.0 / 60.0);
 
         private readonly Action<bool[,]> updateDisplay;
 
@@ -51,20 +46,17 @@ namespace CHIP8Core
         /// </summary>
         private byte soundTimer;
 
-        /// <summary>
-        /// Byte to point at the top most level of the stack.
-        /// </summary>
-        private byte stackPointer;
-
         #endregion
 
         #region Constructors
 
         public CHIP8(Action<bool[,]> writeDisplay,
-                     IRegisterModule registerModule)
+                     IRegisterModule registerModule,
+                     IStackModule stackModule)
         {
             updateDisplay = writeDisplay;
             this.registerModule = registerModule;
+            this.stackModule = stackModule;
         }
 
         #endregion
@@ -139,8 +131,7 @@ namespace CHIP8Core
                                 break;
                             case 0x00EE:
                                 // Return from sub routine
-                                programCounter = stack[stackPointer];
-                                stackPointer -= 1;
+                                programCounter = stackModule.Pop();
                                 break;
                         }
 
@@ -151,8 +142,7 @@ namespace CHIP8Core
                         break;
                     case 0x2:
                         // Call addr
-                        stackPointer += 0x1;
-                        stack[stackPointer] = programCounter;
+                        stackModule.Push(programCounter);
                         programCounter = nextInstruction.addr;
                         break;
                     case 0x3:
