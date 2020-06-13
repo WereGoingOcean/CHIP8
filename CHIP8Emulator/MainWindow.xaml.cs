@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -70,6 +71,8 @@ namespace CHIP8Emulator
 
         private void DisplayEmulatorScreen(bool[,] pixels)
         {
+            const int PixelSize = 4;
+
             Application.Current.Dispatcher.Invoke(() => this.MainCanvas.Children.Clear());
 
             for(var x = 0; x < pixels.GetLength(0); x++)
@@ -83,11 +86,11 @@ namespace CHIP8Emulator
                                                               {
                                                                   var rec = new Rectangle();
                                                                   Canvas.SetTop(rec,
-                                                                                y * 4);
+                                                                                y * PixelSize);
                                                                   Canvas.SetLeft(rec,
-                                                                                 x * 4);
-                                                                  rec.Width = 4;
-                                                                  rec.Height = 4;
+                                                                                 x * PixelSize);
+                                                                  rec.Width = PixelSize;
+                                                                  rec.Height = PixelSize;
                                                                   rec.Fill = new SolidColorBrush(Colors.Black);
                                                                   MainCanvas.Children.Add(rec);
                                                               });
@@ -102,9 +105,11 @@ namespace CHIP8Emulator
 
             emulator = new CHIP8(DisplayEmulatorScreen,
                                  registers,
-                                 new StackModule());
+                                 new StackModule(),
+                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
+                                                                          4096)));
 
-            var bytes = File.ReadAllBytes("test_display_0.ch8");
+            var bytes = File.ReadAllBytes("test_opcode.ch8");
 
             emulator.LoadProgram(bytes);
 

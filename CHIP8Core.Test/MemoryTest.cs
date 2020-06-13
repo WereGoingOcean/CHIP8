@@ -1,4 +1,6 @@
-﻿using Xunit;
+﻿using System.Linq;
+
+using Xunit;
 
 namespace CHIP8Core.Test
 {
@@ -16,7 +18,9 @@ namespace CHIP8Core.Test
 
             var emulator = new CHIP8(null,
                                      registers,
-                                     new StackModule());
+                                     new StackModule(),
+                                     new MemoryModule(Enumerable.Repeat<byte>(0x0,
+                                                                              4096)));
 
             var instructions = new byte[]
                                {

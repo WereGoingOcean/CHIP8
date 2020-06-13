@@ -22,4 +22,9 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\CHIP8Core\CHIP8Core.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Update="BC_test.ch8">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>

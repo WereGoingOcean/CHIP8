@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Linq;
+using System.Reflection;
 
 using Xunit;
 
@@ -31,7 +32,9 @@ namespace CHIP8Core.Test
 
             var chip = new CHIP8(null,
                                  registerModule,
-                                 stackModule);
+                                 stackModule,
+                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
+                                                                          4096)));
 
             chip.LoadProgram(instructions);
 
@@ -66,7 +69,9 @@ namespace CHIP8Core.Test
 
             var chip = new CHIP8(null,
                                  registerModule,
-                                 stackModule);
+                                 stackModule,
+                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
+                                                                          4096)));
 
             chip.LoadProgram(instructions);
 

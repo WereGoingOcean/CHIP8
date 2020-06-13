@@ -22,7 +22,7 @@ namespace CHIP8Core
 
         private readonly HashSet<byte> pressedKeys = new HashSet<byte>();
 
-        private readonly byte[] ram = new byte[4096];
+        private readonly MemoryModule ram;
 
         private readonly Random random = new Random();
 
@@ -52,11 +52,13 @@ namespace CHIP8Core
 
         public CHIP8(Action<bool[,]> writeDisplay,
                      IRegisterModule registerModule,
-                     IStackModule stackModule)
+                     IStackModule stackModule,
+                     MemoryModule memoryModule)
         {
             updateDisplay = writeDisplay;
             this.registerModule = registerModule;
             this.stackModule = stackModule;
+            this.ram = memoryModule;
         }
 
         #endregion
@@ -130,6 +132,7 @@ namespace CHIP8Core
                             case 0x00E0:
                                 // Clear the display
                                 displayPixels = new bool[64, 32];
+                                updateDisplay(displayPixels);
                                 break;
                             case 0x00EE:
                                 // Return from sub routine
