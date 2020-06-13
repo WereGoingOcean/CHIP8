@@ -484,8 +484,8 @@ namespace CHIP8Core
                         return;
                 }
 
-                Tick(this,
-                     null);
+                Tick?.Invoke(this,
+                             null);
             }
 
             Trace.WriteLine("Execution complete.");
