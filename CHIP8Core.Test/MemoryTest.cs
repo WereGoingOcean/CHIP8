@@ -67,7 +67,7 @@ namespace CHIP8Core.Test
         }
 
         [Fact]
-        public void _8xy0_LD_vx_byte()
+        public void _8xy0_LD_vx_vy()
         {
             /*
              * 8xy0 - Stores the value of register Vy in register Vx.
