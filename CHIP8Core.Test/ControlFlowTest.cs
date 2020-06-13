@@ -43,12 +43,52 @@ namespace CHIP8Core.Test
 
             chip.Start();
 
-            var programCounter = (ushort)typeof(CHIP8).GetField("programCounter",
-                                                                BindingFlags.Instance | BindingFlags.NonPublic)
-                                                      .GetValue(chip);
+            var programCounter = GetProgramCounter(chip);
 
             Assert.Equal(addr,
                          programCounter);
+        }
+
+        [Fact]
+        public void _1nnn_JP()
+        {
+            var stackModule = new StackModule();
+
+            var registerModule = new RegisterModule();
+
+            var instructions = new byte[]
+                               {
+                                   0x11,
+                                   0xEF
+                               };
+
+            var expectedAddress = (ushort)(0x11EF & 0x0FFF);
+
+            var chip = new CHIP8(null,
+                                 registerModule,
+                                 stackModule);
+
+            chip.LoadProgram(instructions);
+
+            chip.Tick += (c,
+                          e) =>
+                         {
+                             chip.Stop();
+                         };
+
+            chip.Start();
+
+            var programCounter = GetProgramCounter(chip);
+
+            Assert.Equal(expectedAddress,
+                         programCounter);
+        }
+
+        private ushort GetProgramCounter(CHIP8 chip)
+        {
+            return (ushort)typeof(CHIP8).GetField("programCounter",
+                                                  BindingFlags.Instance | BindingFlags.NonPublic)
+                                        .GetValue(chip);
         }
 
         #endregion
