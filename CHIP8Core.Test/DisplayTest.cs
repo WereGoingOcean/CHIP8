@@ -8,7 +8,7 @@ namespace CHIP8Core.Test
     public class DisplayTest
     {
         [Fact]
-        public void Correctly_Clears_Display()
+        public void Correctly_Clears_Display_CLS()
         {
             var registers = new RegisterModule();
 
@@ -60,7 +60,7 @@ namespace CHIP8Core.Test
         [Theory]
         [InlineData(0, 0)]
         [InlineData(10, 15)]
-        public void Correctly_Draws_Zero_Sprite(int xOffset,
+        public void Correctly_Draws_Zero_Sprite_Dxyn(int xOffset,
                                                 int yOffset)
         {
             var registers = new RegisterModule();
@@ -146,7 +146,7 @@ namespace CHIP8Core.Test
         }
 
         [Fact]
-        public void Correctly_Draws_Manual_Zero_Sprite()
+        public void Correctly_Draws_Manual_Zero_Sprite_Dxyn()
         {
             /*
              * Dxyn - DRW Vx, Vy, nibble

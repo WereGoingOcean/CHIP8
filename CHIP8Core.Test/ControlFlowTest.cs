@@ -89,6 +89,49 @@ namespace CHIP8Core.Test
                          programCounter);
         }
 
+        [Fact]
+        public void _2nnn_CALL()
+        {
+            var stackModule = new StackModule();
+
+            var registerModule = new RegisterModule();
+
+            var instructions = new byte[]
+                               {
+                                   0x21,
+                                   0xEF
+                               };
+
+            var expectedAddress = (ushort)(0x21EF & 0x0FFF);
+
+            var chip = new CHIP8(null,
+                                 registerModule,
+                                 stackModule,
+                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
+                                                                          4096)));
+
+            chip.LoadProgram(instructions);
+
+            chip.Tick += (c,
+                          e) =>
+                         {
+                             chip.Stop();
+                         };
+
+            chip.Start();
+
+            var programCounter = GetProgramCounter(chip);
+
+            Assert.Equal(expectedAddress,
+                         programCounter);
+
+            var itemOnStack = stackModule.Pop();
+
+            // Stack should have the program counter which has only moved up one past the start at 512
+            Assert.Equal(514,
+                         itemOnStack);
+        }
+
         private ushort GetProgramCounter(CHIP8 chip)
         {
             return (ushort)typeof(CHIP8).GetField("programCounter",
