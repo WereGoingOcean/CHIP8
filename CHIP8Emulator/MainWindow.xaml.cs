@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -69,33 +70,49 @@ namespace CHIP8Emulator
                                                                }
                                                            };
 
-        private void DisplayEmulatorScreen(bool[,] pixels)
+        private readonly SemaphoreSlim displayLock = new SemaphoreSlim(1, 1);
+
+        private async Task DisplayEmulatorScreen(bool[,] pixels)
         {
-            const int PixelSize = 4;
-
-            Application.Current.Dispatcher.Invoke(() => this.MainCanvas.Children.Clear());
-
-            for(var x = 0; x < pixels.GetLength(0); x++)
+            try
             {
-                for (var y = 0; y < pixels.GetLength(1); y++)
+                await displayLock.WaitAsync();
+
+                const int PixelSize = 4;
+
+                await Application.Current.Dispatcher.InvokeAsync(() => this.MainCanvas.Children.Clear());
+
+                for (var x = 0; x < pixels.GetLength(0); x++)
                 {
-                    if (pixels[x,
-                               y])
+                    for (var y = 0; y < pixels.GetLength(1); y++)
                     {
-                        Application.Current.Dispatcher.Invoke(() =>
-                                                              {
-                                                                  var rec = new Rectangle();
-                                                                  Canvas.SetTop(rec,
-                                                                                y * PixelSize);
-                                                                  Canvas.SetLeft(rec,
-                                                                                 x * PixelSize);
-                                                                  rec.Width = PixelSize;
-                                                                  rec.Height = PixelSize;
-                                                                  rec.Fill = new SolidColorBrush(Colors.Black);
-                                                                  MainCanvas.Children.Add(rec);
-                                                              });
+                        if (pixels[x,
+                                   y])
+                        {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                                                                             {
+                                                                                 var rec = new Rectangle();
+                                                                                 Canvas.SetTop(rec,
+                                                                                               y * PixelSize);
+                                                                                 Canvas.SetLeft(rec,
+                                                                                                x * PixelSize);
+                                                                                 rec.Width = PixelSize;
+                                                                                 rec.Height = PixelSize;
+                                                                                 rec.Fill = new SolidColorBrush(Colors.Black);
+                                                                                 MainCanvas.Children.Add(rec);
+                                                                             });
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Exception {ex}",
+                                "Exception");
+            }
+            finally
+            {
+                displayLock.Release();
             }
         }
 

@@ -32,7 +32,7 @@ namespace CHIP8Core
 
         private readonly TimeSpan sixtySeconds = TimeSpan.FromSeconds(1.0 / 60.0);
 
-        private readonly Action<bool[,]> updateDisplay;
+        private readonly Func<bool[,], Task> updateDisplay;
 
         /// <summary>Decrements at 60hz</summary>
         private byte delayTimer;
@@ -50,7 +50,7 @@ namespace CHIP8Core
 
         #region Constructors
 
-        public CHIP8(Action<bool[,]> writeDisplay,
+        public CHIP8(Func<bool[,], Task> writeDisplay,
                      IRegisterModule registerModule,
                      IStackModule stackModule,
                      MemoryModule memoryModule,
@@ -333,8 +333,8 @@ namespace CHIP8Core
                             return result;
                         }
 
-                        var xVal = nextInstruction.x;
-                        var y = nextInstruction.y;
+                        var xVal = registerModule.GetGeneralValue(nextInstruction.x);
+                        var y = registerModule.GetGeneralValue(nextInstruction.y);
 
                         var setVf = false;
 
@@ -374,7 +374,7 @@ namespace CHIP8Core
                                                            ? (byte)0x1
                                                            : (byte)0x0);
 
-                        updateDisplay.Invoke(displayPixels);
+                        updateDisplay.Invoke(displayPixels).Wait();
 
                         break;
                     case 0xE:

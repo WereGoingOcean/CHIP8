@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 
 using Xunit;
 
@@ -15,9 +16,10 @@ namespace CHIP8Core.Test
 
             bool[,] display = null;
 
-            void WriteDisplay(bool[,] values)
+            Task WriteDisplay(bool[,] values)
             {
                 display = values;
+                return Task.CompletedTask;
             }
 
             var emulator = CHIP8Factory.GetChip8(WriteDisplay,
@@ -91,9 +93,10 @@ namespace CHIP8Core.Test
 
             bool[,] display = null;
 
-            void WriteDisplay(bool[,] values)
+            Task WriteDisplay(bool[,] values)
             {
                 display = values;
+                return Task.CompletedTask;
             }
 
             var ram = Enumerable.Repeat<byte>(0x0,
@@ -182,32 +185,38 @@ namespace CHIP8Core.Test
                     0)]
         [InlineData(10,
                     15)]
-        public void Correctly_Draws_Zero_Sprite_Dxyn(int xOffset,
-                                                     int yOffset)
+        public void Correctly_Draws_Zero_Sprite_Dxyn(byte xOffset,
+                                                     byte yOffset)
         {
             var registers = new RegisterModule();
 
             bool[,] display = null;
 
-            void WriteDisplay(bool[,] values)
+            Task WriteDisplay(bool[,] values)
             {
                 display = values;
+                return Task.CompletedTask;
             }
 
             var emulator = CHIP8Factory.GetChip8(WriteDisplay,
                                                  registers);
 
-            registers.SetGeneralValue(0,
+            registers.SetGeneralValue(3,
                                       0x0);
+
+            registers.SetGeneralValue(0,
+                                      xOffset);
+            registers.SetGeneralValue(1,
+                                      yOffset);
 
             var instructions = new byte[]
                                {
                                    /* Load location of sprite for '0' to I */
-                                   0xF0,
+                                   0xF3,
                                    0x29,
-                                   /* Draw 5 byte sized sprite at 0,0 */
+                                   /* Draw 5 byte sized sprite at (v0, v1) */
                                    0xD0,
-                                   0x05
+                                   0x15
                                };
 
             emulator.LoadProgram(instructions);
@@ -219,6 +228,9 @@ namespace CHIP8Core.Test
                                bool pixelValue)
             {
                 var validY = false;
+
+                x = x - xOffset;
+                y = y - yOffset;
 
                 switch (x)
                 {
@@ -248,15 +260,15 @@ namespace CHIP8Core.Test
                 }
 
                 Assert.True(validY,
-                            $"Invalid pixel at {x},{y}. {pixelValue}.");
+                            $"Invalid pixel at sprite coordinate ({x},{y}), true coordinate({x + xOffset}, {y + yOffset}). {pixelValue}.");
             }
 
             Assert.NotNull(display);
 
             // Check the 8x5 area the sprite displays in
-            for (var x = 0 + xOffset; x < 8; x++)
+            for (var x = xOffset; x < 8 + xOffset; x++)
             {
-                for (var y = 0 + yOffset; y < 5; y++)
+                for (var y = yOffset; y < 5 + yOffset; y++)
                 {
                     AssertDisplay(x,
                                   y,

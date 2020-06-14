@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CHIP8Core
 {
@@ -7,16 +8,13 @@ namespace CHIP8Core
     {
         #region Class Methods
 
-        public static CHIP8 GetChip8(Action<bool[,]> writeDisplay = null,
+        public static CHIP8 GetChip8(Func<bool[,], Task> writeDisplay = null,
                                      IRegisterModule registers = null,
                                      IStackModule stack = null,
                                      MemoryModule mem = null,
                                      IRandomModule random = null)
         {
-            return new CHIP8(writeDisplay
-                             ?? (x =>
-                                 {
-                                 }),
+            return new CHIP8(writeDisplay ?? (x => Task.CompletedTask),
                              registers ?? new RegisterModule(),
                              stack ?? new StackModule(),
                              mem
