@@ -165,6 +165,9 @@ namespace CHIP8Emulator
                                              new MemoryModule(Enumerable.Repeat<byte>(0x0,
                                                                                       4096)));
 
+            emulator.ToneOn += this.ToneOn;
+            emulator.ToneOff += this.ToneOff;
+
             var bytes = File.ReadAllBytes("pong.ch8");
 
             emulator.LoadProgram(bytes);
@@ -175,6 +178,32 @@ namespace CHIP8Emulator
             this.KeyUp += MainWindow_KeyUp;
         }
 
+        private CancellationTokenSource toneToken;
+
+        private void ToneOn(object sender,
+                            EventArgs eventArgs)
+        {
+            toneToken = new CancellationTokenSource();
+            Task.Run(() => ToneTask());
+        }
+
+        private void ToneTask()
+        {
+            while(!toneToken.IsCancellationRequested)
+            {
+                Console.Beep(440,
+                             1_000);
+
+                Thread.Sleep(900);
+            }
+        }
+
+        private void ToneOff(object sender, EventArgs eventArgs)
+        {
+            toneToken.Cancel();
+        }
+
+        
         protected override void OnInitialized(EventArgs e)
         {
             base.OnInitialized(e);

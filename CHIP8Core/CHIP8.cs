@@ -505,20 +505,39 @@ namespace CHIP8Core
             clockToken.Cancel();
         }
 
+        public event EventHandler ToneOn;
+
+        public event EventHandler ToneOff;
+
         private async void Clock(CancellationToken cancellationToken)
         {
             var lastClockTick = DateTime.Now;
+
+            var toneSounding = false;
 
             while (!cancellationToken.IsCancellationRequested)
             {
                 //TODO do we really need this check?
                 if (DateTime.Now.Subtract(lastClockTick) >= oneSixtiethSecond)
                 {
-                    //TODO action for beep & un-beep
+                    if (!toneSounding
+                        && soundTimer > 0)
+                    {
+                        toneSounding = true;
+                        Task.Run(() => ToneOn?.Invoke(this,
+                                                      null));
+                    }
 
                     if (soundTimer > 0)
                     {
                         soundTimer--;
+                    }
+
+                    if (soundTimer == 0 && toneSounding)
+                    {
+                        toneSounding = false;
+                        Task.Run(() => ToneOff?.Invoke(this,
+                                                      null));
                     }
 
                     if (delayTimer > 0)
