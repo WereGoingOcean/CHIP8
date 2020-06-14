@@ -457,12 +457,12 @@ namespace CHIP8Core
                                 var x = nextInstruction.x;
                                 /* Store registers V0 through Vx in memory starting at location I.
                                 The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I. */
-                                for (var i = 0; i < x; x++)
-                                {
-                                    iVal = registerModule.GetI();
+                                iVal = registerModule.GetI();
 
+                                for (var i = 0; i <= x; i++)
+                                {
                                     ram[iVal] = registerModule.GetGeneralValue(i);
-                                    registerModule.SetI((ushort)(iVal + 1));
+                                    iVal += 1;
                                 }
 
                                 break;
@@ -470,13 +470,13 @@ namespace CHIP8Core
                                 x = nextInstruction.x;
                                 /* Read registers V0 through Vx from memory starting at location I.
                                 The interpreter reads values from memory starting at location I into registers V0 through Vx. */
-                                for (var i = 0; i < x; x++)
-                                {
-                                    iVal = registerModule.GetI();
+                                iVal = registerModule.GetI();
 
+                                for (var i = 0; i <= x; i++)
+                                {
                                     registerModule.SetGeneralValue(i,
                                                                    ram[iVal]);
-                                    registerModule.SetI((ushort)(iVal + 1));
+                                    iVal += 1;
                                 }
 
                                 break;
