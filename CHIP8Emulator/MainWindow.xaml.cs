@@ -126,7 +126,7 @@ namespace CHIP8Emulator
                                              new MemoryModule(Enumerable.Repeat<byte>(0x0,
                                                                                       4096)));
 
-            var bytes = File.ReadAllBytes("test_opcode.ch8");
+            var bytes = File.ReadAllBytes("pong.ch8");
 
             emulator.LoadProgram(bytes);
 

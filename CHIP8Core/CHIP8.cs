@@ -30,7 +30,7 @@ namespace CHIP8Core
 
         private readonly IStackModule stackModule;
 
-        private readonly TimeSpan sixtySeconds = TimeSpan.FromSeconds(1.0 / 60.0);
+        private readonly TimeSpan oneSixtiethSecond = TimeSpan.FromSeconds(1.0 / 60.0);
 
         private readonly Func<bool[,], Task> updateDisplay;
 
@@ -506,7 +506,8 @@ namespace CHIP8Core
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (DateTime.Now.Subtract(lastClockTick) >= sixtySeconds)
+                //TODO do we really need this check?
+                if (DateTime.Now.Subtract(lastClockTick) >= oneSixtiethSecond)
                 {
                     //TODO action for beep & un-beep
 
@@ -521,7 +522,7 @@ namespace CHIP8Core
                     }
                 }
 
-                await Task.Delay(1_000);
+                await Task.Delay(oneSixtiethSecond);
             }
         }
 
