@@ -438,11 +438,7 @@ If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. The
 
         private CHIP8 GetChip(IRegisterModule registers)
         {
-            return new CHIP8(null,
-                             registers,
-                             new StackModule(),
-                             new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                      4096)));
+            return CHIP8Factory.GetChip8(registers: registers);
         }
 
         #endregion

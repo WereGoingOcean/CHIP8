@@ -24,7 +24,7 @@ namespace CHIP8Core
 
         private readonly MemoryModule ram;
 
-        private readonly Random random = new Random();
+        private readonly IRandomModule random;
 
         private readonly IRegisterModule registerModule;
 
@@ -53,12 +53,14 @@ namespace CHIP8Core
         public CHIP8(Action<bool[,]> writeDisplay,
                      IRegisterModule registerModule,
                      IStackModule stackModule,
-                     MemoryModule memoryModule)
+                     MemoryModule memoryModule,
+                     IRandomModule randomModule)
         {
             updateDisplay = writeDisplay;
             this.registerModule = registerModule;
             this.stackModule = stackModule;
             this.ram = memoryModule;
+            this.random = randomModule;
         }
 
         #endregion
@@ -300,11 +302,10 @@ namespace CHIP8Core
                         break;
                     case 0xC:
                         // RND, gen random between 0 - 255. Rand & kk -> vx
-                        var randomVal = new byte[1];
-                        random.NextBytes(randomVal);
+                        var randomVal = random.GetNextRandom();
 
                         registerModule.SetGeneralValue(nextInstruction.x,
-                                                       (byte)(randomVal[0] & nextInstruction.kk));
+                                                       (byte)(randomVal & nextInstruction.kk));
                         break;
                     case 0xD:
 

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Reflection;
 
 using Xunit;
 
@@ -16,11 +17,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers,
-                                     new StackModule(),
-                                     new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                              4096)));
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
 
             var instructions = new byte[]
                                {
@@ -44,11 +41,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers,
-                                     new StackModule(),
-                                     new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                              4096)));
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
 
             var instructions = new byte[]
                                {
@@ -74,11 +67,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers,
-                                     new StackModule(),
-                                     new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                              4096)));
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
 
             var instructions = new byte[]
                                {
@@ -96,6 +85,115 @@ namespace CHIP8Core.Test
                          registers.GetGeneralValue(0));
         }
 
+        [Fact]
+        public void _Annn_LD_I_addr()
+        {
+            var registers = new RegisterModule();
+
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
+
+            var instructions = new byte[]
+                               {
+                                   0xA1,
+                                   0x23
+                               };
+
+            emulator.LoadProgram(instructions);
+
+            emulator.Start();
+
+            Assert.Equal(0x123,
+                         registers.GetI());
+        }
+
+        [Fact]
+        public void _Bnnn_JP_v0_addr()
+        {
+            var registers = new RegisterModule();
+
+            registers.SetGeneralValue(0,
+                                      0x12);
+
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
+
+            var instructions = new byte[]
+                               {
+                                   0xB1,
+                                   0x23
+                               };
+
+            emulator.LoadProgram(instructions);
+
+            emulator.Tick += (e,
+                              a) =>
+                             {
+                                 emulator.Stop();
+                             };
+
+            emulator.Start();
+
+            Assert.Equal(0x123 + 0x12,
+                         GetProgramCounter(emulator));
+        }
+
+        [Theory]
+        [InlineData(0x12,
+                    0x20)]
+        [InlineData(0x05,
+                    0xA1)]
+        public void _Cxkk_RND_vx_byte(byte kk,
+                                      byte rand)
+        {
+            var registers = new RegisterModule();
+
+            var random = new TestRandom(rand);
+
+
+            var emulator = CHIP8Factory.GetChip8(registers: registers,
+                                                 random: random);
+
+            var instructions = new byte[]
+                               {
+                                   0xC0, //Set v0 = kk & random byte
+                                   kk
+                               };
+
+            emulator.LoadProgram(instructions);
+
+            emulator.Tick += (e,
+                              a) =>
+                             {
+                                 emulator.Stop();
+                             };
+
+            emulator.Start();
+
+            Assert.Equal(rand & kk,
+                         registers.GetGeneralValue(0));
+        }
+
+        private ushort GetProgramCounter(CHIP8 chip)
+        {
+            return (ushort)typeof(CHIP8).GetField("programCounter",
+                                                  BindingFlags.Instance | BindingFlags.NonPublic)
+                                        .GetValue(chip);
+        }
+
         #endregion
+
+        class TestRandom : IRandomModule
+        {
+            private readonly byte randomByte;
+
+            public TestRandom(byte randomByte)
+            {
+                this.randomByte = randomByte;
+            }
+
+            public byte GetNextRandom()
+            {
+                return randomByte;
+            }
+        }
     }
 }

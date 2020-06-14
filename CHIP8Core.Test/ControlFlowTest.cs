@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 
 using Xunit;
 
@@ -20,8 +19,6 @@ namespace CHIP8Core.Test
 
             var stackModule = new StackModule();
 
-            var registerModule = new RegisterModule();
-
             stackModule.Push(addr);
 
             var instructions = new byte[]
@@ -30,11 +27,7 @@ namespace CHIP8Core.Test
                                    0xEE
                                };
 
-            var chip = new CHIP8(null,
-                                 registerModule,
-                                 stackModule,
-                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                          4096)));
+            var chip = CHIP8Factory.GetChip8(stack: stackModule);
 
             chip.LoadProgram(instructions);
 
@@ -55,10 +48,6 @@ namespace CHIP8Core.Test
         [Fact]
         public void _1nnn_JP()
         {
-            var stackModule = new StackModule();
-
-            var registerModule = new RegisterModule();
-
             var instructions = new byte[]
                                {
                                    0x11,
@@ -67,11 +56,7 @@ namespace CHIP8Core.Test
 
             var expectedAddress = (ushort)(0x11EF & 0x0FFF);
 
-            var chip = new CHIP8(null,
-                                 registerModule,
-                                 stackModule,
-                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                          4096)));
+            var chip = CHIP8Factory.GetChip8();
 
             chip.LoadProgram(instructions);
 
@@ -92,10 +77,6 @@ namespace CHIP8Core.Test
         [Fact]
         public void _2nnn_CALL()
         {
-            var stackModule = new StackModule();
-
-            var registerModule = new RegisterModule();
-
             var instructions = new byte[]
                                {
                                    0x21,
@@ -104,11 +85,9 @@ namespace CHIP8Core.Test
 
             var expectedAddress = (ushort)(0x21EF & 0x0FFF);
 
-            var chip = new CHIP8(null,
-                                 registerModule,
-                                 stackModule,
-                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                          4096)));
+            var stackModule = new StackModule();
+
+            var chip = CHIP8Factory.GetChip8(stack: stackModule);
 
             chip.LoadProgram(instructions);
 
@@ -130,6 +109,196 @@ namespace CHIP8Core.Test
             // Stack should have the program counter which has only moved up one past the start at 512
             Assert.Equal(514,
                          itemOnStack);
+        }
+
+        [Theory]
+        [InlineData(0x12,
+                    0x10)]
+        [InlineData(0x20,
+                    0x20)]
+        public void _3xkk_SE_vx_byte(byte vx,
+                                     byte kk)
+        {
+            var registerModule = new RegisterModule();
+
+            registerModule.SetGeneralValue(0,
+                                           vx);
+
+            var instructions = new byte[]
+                               {
+                                   0x30, //Inc program counter by 2 if v0 == kk
+                                   kk
+                               };
+
+            var chip = CHIP8Factory.GetChip8(registers: registerModule);
+
+            chip.LoadProgram(instructions);
+
+            chip.Tick += (c,
+                          e) =>
+                         {
+                             chip.Stop();
+                         };
+
+            chip.Start();
+
+            var nextInstruction = 514;
+
+            var expectedAddress = nextInstruction;
+
+            if (vx == kk)
+            {
+                expectedAddress += 2;
+            }
+
+            var programCounter = GetProgramCounter(chip);
+
+            Assert.Equal(expectedAddress,
+                         programCounter);
+        }
+
+        [Theory]
+        [InlineData(0x12,
+                    0x10)]
+        [InlineData(0x20,
+                    0x20)]
+        public void _4xkk_SNE_vx_byte(byte vx,
+                                      byte kk)
+        {
+            var registerModule = new RegisterModule();
+
+            registerModule.SetGeneralValue(0,
+                                           vx);
+
+            var instructions = new byte[]
+                               {
+                                   0x40, //Inc program counter by 2 if v0 != kk
+                                   kk
+                               };
+
+            var chip = CHIP8Factory.GetChip8(registers: registerModule);
+
+            chip.LoadProgram(instructions);
+
+            chip.Tick += (c,
+                          e) =>
+                         {
+                             chip.Stop();
+                         };
+
+            chip.Start();
+
+            var nextInstruction = 514;
+
+            var expectedAddress = nextInstruction;
+
+            if (vx != kk)
+            {
+                expectedAddress += 2;
+            }
+
+            var programCounter = GetProgramCounter(chip);
+
+            Assert.Equal(expectedAddress,
+                         programCounter);
+        }
+
+        [Theory]
+        [InlineData(0x12,
+                    0x10)]
+        [InlineData(0x20,
+                    0x20)]
+        public void _5xy0_SE_vx_vy(byte vx,
+                                   byte vy)
+        {
+            var registerModule = new RegisterModule();
+
+            registerModule.SetGeneralValue(0,
+                                           vx);
+
+            registerModule.SetGeneralValue(1,
+                                           vy);
+
+            var instructions = new byte[]
+                               {
+                                   0x50, //Inc program counter by 2 if v0 == v1
+                                   0x10
+                               };
+
+            var chip = CHIP8Factory.GetChip8(registers: registerModule);
+
+            chip.LoadProgram(instructions);
+
+            chip.Tick += (c,
+                          e) =>
+                         {
+                             chip.Stop();
+                         };
+
+            chip.Start();
+
+            var nextInstruction = 514;
+
+            var expectedAddress = nextInstruction;
+
+            if (vx == vy)
+            {
+                expectedAddress += 2;
+            }
+
+            var programCounter = GetProgramCounter(chip);
+
+            Assert.Equal(expectedAddress,
+                         programCounter);
+        }
+
+        [Theory]
+        [InlineData(0x12,
+                    0x10)]
+        [InlineData(0x20,
+                    0x20)]
+        public void _9xy0_SNE_vx_vy(byte vx,
+                                    byte vy)
+        {
+            var registerModule = new RegisterModule();
+
+            registerModule.SetGeneralValue(0,
+                                           vx);
+
+            registerModule.SetGeneralValue(1,
+                                           vy);
+
+            var instructions = new byte[]
+                               {
+                                   0x90, //Inc program counter by 2 if v0 == v1
+                                   0x10
+                               };
+
+            var chip = CHIP8Factory.GetChip8(registers: registerModule);
+
+            chip.LoadProgram(instructions);
+
+            chip.Tick += (c,
+                          e) =>
+                         {
+                             chip.Stop();
+                         };
+
+            chip.Start();
+
+            var nextInstruction = 514;
+
+            var expectedAddress = nextInstruction;
+
+            if (vx != vy)
+            {
+                expectedAddress += 2;
+            }
+
+            var programCounter = GetProgramCounter(chip);
+
+            Assert.Equal(expectedAddress,
+                         programCounter);
         }
 
         private ushort GetProgramCounter(CHIP8 chip)

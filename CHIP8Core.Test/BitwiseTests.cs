@@ -19,11 +19,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers,
-                                     new StackModule(),
-                                     new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                              4096)));
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
 
             var instructions = new byte[]
                                {
@@ -58,11 +54,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers,
-                                     new StackModule(),
-                                     new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                              4096)));
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
 
             var instructions = new byte[]
                                {
@@ -97,11 +89,7 @@ namespace CHIP8Core.Test
              */
             var registers = new RegisterModule();
 
-            var emulator = new CHIP8(null,
-                                     registers,
-                                     new StackModule(),
-                                     new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                              4096)));
+            var emulator = CHIP8Factory.GetChip8(registers: registers);
 
             var instructions = new byte[]
                                {

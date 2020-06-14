@@ -103,11 +103,11 @@ namespace CHIP8Emulator
         {
             var registers = new RegisterModule();
 
-            emulator = new CHIP8(DisplayEmulatorScreen,
-                                 registers,
-                                 new StackModule(),
-                                 new MemoryModule(Enumerable.Repeat<byte>(0x0,
-                                                                          4096)));
+            emulator = CHIP8Factory.GetChip8(DisplayEmulatorScreen,
+                                             registers,
+                                             new StackModule(),
+                                             new MemoryModule(Enumerable.Repeat<byte>(0x0,
+                                                                                      4096)));
 
             var bytes = File.ReadAllBytes("test_opcode.ch8");
 
