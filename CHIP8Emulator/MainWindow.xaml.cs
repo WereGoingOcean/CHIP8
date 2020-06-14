@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -80,30 +81,53 @@ namespace CHIP8Emulator
 
                 const int PixelSize = 4;
 
-                await Application.Current.Dispatcher.InvokeAsync(() => this.MainCanvas.Children.Clear());
+                var actions = new List<Action>();
 
                 for (var x = 0; x < pixels.GetLength(0); x++)
                 {
                     for (var y = 0; y < pixels.GetLength(1); y++)
                     {
-                        if (pixels[x,
-                                   y])
+                        var point = new Point(x,
+                                              y);
+
+                        var currentRect = displayDictionary[point];
+
+                        if (currentRect == null
+                            && pixels[x,
+                                      y])
                         {
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
-                                                                             {
-                                                                                 var rec = new Rectangle();
-                                                                                 Canvas.SetTop(rec,
-                                                                                               y * PixelSize);
-                                                                                 Canvas.SetLeft(rec,
-                                                                                                x * PixelSize);
-                                                                                 rec.Width = PixelSize;
-                                                                                 rec.Height = PixelSize;
-                                                                                 rec.Fill = new SolidColorBrush(Colors.Black);
-                                                                                 MainCanvas.Children.Add(rec);
-                                                                             });
+                            //Need a new rect here
+                            var x1 = x;
+                            var y1 = y;
+                            actions.Add(() =>
+                                        {
+                                            var rec = new Rectangle();
+                                            Canvas.SetTop(rec,
+                                                          y1 * PixelSize);
+                                            Canvas.SetLeft(rec,
+                                                           x1 * PixelSize);
+                                            rec.Width = PixelSize;
+                                            rec.Height = PixelSize;
+                                            rec.Fill = new SolidColorBrush(Colors.Black);
+                                            MainCanvas.Children.Add(rec);
+                                            displayDictionary[point] = rec;
+                                        });
+                        }
+                        else if (currentRect != null
+                                 && !pixels[x,
+                                            y])
+                        {
+                            //Need to remove the rect
+                            actions.Add(() =>
+                                        {
+                                            MainCanvas.Children.Remove(currentRect);
+                                            displayDictionary[point] = null;
+                                        });
                         }
                     }
                 }
+
+                await Application.Current.Dispatcher.InvokeAsync(() => actions.ForEach(x => x()));
             }
             catch (Exception ex)
             {
@@ -116,8 +140,23 @@ namespace CHIP8Emulator
             }
         }
 
+        private readonly Dictionary<Point, Rectangle> displayDictionary;
+
         public MainWindow()
         {
+            displayDictionary = new Dictionary<Point, Rectangle>();
+
+            for(var x = 0; x < 64; x++)
+            {
+                for(var y = 0; y < 32; y++)
+                {
+                    var point = new Point(x,
+                                          y);
+
+                    displayDictionary[point] = null;
+                }
+            }
+
             var registers = new RegisterModule();
 
             emulator = CHIP8Factory.GetChip8(DisplayEmulatorScreen,
