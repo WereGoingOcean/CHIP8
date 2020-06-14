@@ -7,6 +7,8 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="256" Width="512">
     <Grid>
-        <Canvas x:Name="MainCanvas"></Canvas>
+        <Border BorderThickness="1" BorderBrush="Red" Height="128" Width="256">
+            <Canvas x:Name="MainCanvas" Height="128" Width="256"></Canvas>
+        </Border>
     </Grid>
 </Window>

@@ -342,6 +342,11 @@ namespace CHIP8Core
                         {
                             var row = y + i;
 
+                            if (row > 31)
+                            {
+                                row -= 31;
+                            }
+
                             var sprite = ram[registerModule.GetI() + i];
 
                             var pixelSetting = ConvertByteToBoolArray(sprite);
